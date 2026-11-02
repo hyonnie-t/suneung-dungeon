@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- 포털 로그인 세션 자동 첨부(history26 v83) -->
+<script src="https://hyonnie-t.github.io/history26/snippets/portal_auth.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>수능 던전 — 3학년 한국사</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어</div>
+
+<!-- ───────── 입구 ───────── -->
+<section id="s0" class="page">
+  <header class="gate-head">
+    <p class="eyebrow">3학년 한국사 · 조선 후기 → 현대</p>
+    <h1 class="title">수능 던전</h1>
+    <p class="lead">층마다 보스가 기다려. 모둠이 돌아가며 한 문제씩 풀고, 맞히면 보스가 다치고 틀리면 우리가 다쳐.</p>
+  </header>
+
+  <div class="card">
+    <h2 class="h2">① 누구?</h2>
+    <div class="row2">
+      <label class="field"><span>학번</span><input id="sid" type="text" inputmode="numeric" maxlength="5" placeholder="5자리 숫자"></label>
+      <label class="field"><span>이름</span><input id="sname" type="text" maxlength="12" placeholder="이름"></label>
+    </div>
+    <p class="hint">태블릿을 든 사람 학번이면 돼. 모둠원은 아래에 넣어.</p>
+  </div>
+
+  <div class="card">
+    <h2 class="h2">② 오늘 던전</h2>
+    <div id="sessionPick" class="pick-grid"></div>
+    <details class="more"><summary>유연 차시(층 하나씩)·모의고사 20문항</summary><div id="sessionPickSplit" class="pick-grid"></div></details>
+  </div>
+
+  <div class="card" id="houseCard">
+    <h2 class="h2">③ 기숙사(모둠)</h2>
+    <div id="housePick" class="house-grid"></div>
+    <label class="field"><span>모둠원 이름(쉼표로, 돌아가며 풀 순서)</span><input id="members" type="text" placeholder="순서대로 이름만"></label>
+  </div>
+
+  <p id="startErr" class="err" role="alert"></p>
+  <button id="startBtn" class="btn-main" type="button">던전 입장</button>
+</section>
+
+<!-- ───────── 보스전 ───────── -->
+<section id="sPlay" class="page" hidden>
+  <div class="hud" id="hud">
+    <div class="hud-top">
+      <span class="hud-floor" id="hudFloor"></span>
+      <span class="hud-turn" id="hudTurn"></span>
+      <span class="hud-time" id="hudTime">0:00</span>
+    </div>
+    <div class="hud-bars">
+      <div class="bar boss"><span class="bar-label" id="bossName">보스</span><div class="bar-track"><div class="bar-fill" id="bossBar"></div></div><span class="bar-num" id="bossNum"></span></div>
+      <div class="bar team"><span class="bar-label">우리 모둠</span><div class="hearts" id="teamHearts"></div></div>
+    </div>
+  </div>
+  <div id="playView"></div>
+</section>
+
+<!-- ───────── 통합 모의고사 ───────── -->
+<section id="sMock" class="page" hidden>
+  <div class="hud" id="mockHud">
+    <div class="hud-top">
+      <span class="hud-floor">통합 모의고사 · 개인전</span>
+      <span class="hud-turn" id="mockProg"></span>
+      <span class="hud-time" id="mockTime">20:00</span>
+    </div>
+  </div>
+  <div id="mockView"></div>
+</section>
+
+<!-- ───────── 결과·제출 ───────── -->
+<section id="sEnd" class="page" hidden>
+  <div id="endView"></div>
+</section>
+
+<!-- ───────── 교사 화면 (?teacher=1) ───────── -->
+<section id="sTeacher" class="page wide" hidden>
+  <header class="gate-head">
+    <p class="eyebrow">교사 화면</p>
+    <h1 class="title">수능 던전 · 강의 카드와 통계</h1>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="cards" role="tab">강의 카드</button>
+    <button class="tab" data-tab="stats" role="tab">정답률·오답</button>
+    <button class="tab" data-tab="bank" role="tab">문제 은행</button>
+  </nav>
+  <div id="tCards" class="tab-pane"></div>
+  <div id="tStats" class="tab-pane" hidden></div>
+  <div id="tBank" class="tab-pane" hidden></div>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="snippets/focus_guard.js"></script>
+<script src="snippets/draft_guard.js"></script>
+<script src="snippets/glossary.js"></script>
+<script src="data.js"></script>
+<script src="questions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
