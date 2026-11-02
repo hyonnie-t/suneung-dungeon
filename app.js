@@ -170,7 +170,8 @@ function renderPlay() {
 
 function questionHTML(q, n, total) {
   const L = layerOf(q.layer);
-  const box = q.box ? `<div class="q-box ${q.boxKind === "img" ? "img" : ""}">${esc(q.box)}</div>` : "";
+  // 자료 안 __낱말__은 원문의 밑줄(문제에서 «밑줄 친 ○○»으로 가리키는 곳)
+  const box = q.box ? `<div class="q-box ${q.boxKind === "img" ? "img" : ""}">${esc(q.box).replace(/__(.+?)__/g, "<u>$1</u>")}</div>` : "";
   const note = q.edited ? `<p class="q-note">※ 사료 어휘를 중학생 수준으로 손봤어(원문 아님).</p>` : "";
   const bogi = q.bogi ? `<div class="q-box"><b style="font-family:var(--sans)">&lt;보기&gt;</b>\n${q.bogi.map(esc).join("\n")}</div>` : "";
   const long = q.ch.some(c => c.length > 28);

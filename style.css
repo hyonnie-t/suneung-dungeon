@@ -165,3 +165,4 @@ body{margin:0;background:var(--stone);color:var(--ink);font-family:var(--serif);
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:999px;font:15px var(--sans);z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rise{opacity:1;transform:none}}
+.q-box u{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent);font-weight:700}
