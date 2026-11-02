@@ -81,7 +81,7 @@ function startApp() {
   if (!S.session.mockOnly && !S.house) { $("startErr").textContent = "기숙사를 골라 줘."; return; }
   $("startErr").textContent = "";
   S.sid = sid; S.name = name; S.grade = p.grade; S.ban = p.ban;
-  S.members = $("members").value.split(/[,，\s]+/).map(x => x.trim()).filter(Boolean).slice(0, 8);
+  S.members = $("members").value.split(/[,，\n]+/).map(x => x.trim()).filter(Boolean).slice(0, 8);
   if (!S.members.length) S.members = [name];
   CONFIG.GAME_NAME = CONFIG.GAME_PREFIX + "_" + S.session.gameId;
   FocusGuard.start({ key: CONFIG.GAME_NAME + ":" + sid }); // 작성 중 화면 이탈·붙여넣기 기록
@@ -141,7 +141,7 @@ function renderPlay() {
     const q = curQ();
     v.innerHTML = questionHTML(q, pt.idx + 1, pt.qids.length) + (st === "q"
       ? `<div class="btn-row"><button class="btn-main" type="button" id="checkBtn" disabled>정답 확인</button></div>`
-      : feedbackHTML(q, S.run.picked) + `<div class="btn-row"><button class="btn-main" type="button" id="nextBtn">${pt.bossHp === 0 ? "보스 처치!" : "다음 문제"}</button></div>`);
+      : feedbackHTML(q, S.run.picked) + `<div class="btn-row"><button class="btn-main" type="button" id="nextBtn">${pt.bossHp === 0 ? "보스 처치!" : pt.idx + 1 >= pt.qids.length ? "층 결과 보기" : "다음 문제"}</button></div>`);
     if (st === "q") {
       v.querySelectorAll(".choice").forEach(b => b.addEventListener("click", () => {
         S.run.picked = Number(b.dataset.n);
@@ -157,9 +157,10 @@ function renderPlay() {
   }
   if (st === "revive") { renderRevive(v); return; }
   if (st === "clear") {
-    v.innerHTML = `<div class="card boss-card rise"><div class="ico">🏆</div><h2>${esc(pt.boss.name)} 처치!</h2>
+    const slain = pt.bossHp === 0;
+    v.innerHTML = `<div class="card boss-card rise"><div class="ico">${slain ? "🏆" : "🛡️"}</div><h2>${esc(pt.boss.name)} ${slain ? "처치!" : "— 문제가 다 떨어졌어"}</h2>${slain ? "" : `<p>보스 HP ${pt.bossHp} 남음. 오답 해설을 보고 다음 층으로.</p>`}
       <p>걸린 시간 <b>${fmtSec(pt.clearSec)}</b> · 정답 ${pt.correct} / 오답 ${pt.wrong}</p>
-      <p>${esc(pt.boss.defeat)}</p>
+      <p>${slain ? esc(pt.boss.defeat) : ""}</p>
       <button class="btn-main" type="button" id="nextFloorBtn">${S.run.partIdx + 1 < S.run.parts.length ? "다음 층으로" : "던전 결과 보기"}</button></div>`;
     $("nextFloorBtn").addEventListener("click", () => {
       if (S.run.partIdx + 1 < S.run.parts.length) { S.run.partIdx++; S.run.state = "intro"; renderPlay(); }
@@ -247,7 +248,7 @@ function runScore() {
   const r = S.run;
   const correct = r.answers.filter(a => a.ok).length;
   let pts = correct * 10 + Math.max(0, r.teamHp) * 5;
-  r.parts.forEach(p => { if (p.bossHp === 0 && p.clearSec <= 600) pts += 10; }); // 10분 안에 처치하면 +10
+  r.parts.forEach(p => { if (p.clearSec <= 600) pts += 10; }); // 층을 10분 안에 끝내면 +10(보스를 못 잡았어도)
   pts -= r.revived * 5;
   return { correct, total: r.answers.length, pts: Math.max(0, pts) };
 }
@@ -326,6 +327,7 @@ function startMock(n) {
   S.mock = { qids, idx: 0, picks: {}, startAt: Date.now(), limitSec: n >= 20 ? 25 * 60 : 20 * 60, done: false };
   show("sMock");
   $("sMock").className = "page layer-M";
+  $("mockTime").textContent = fmtSec(S.mock.limitSec);
   startTimer("mockTime", () => { const left = S.mock.limitSec - (Date.now() - S.mock.startAt) / 1000; if (left <= 0 && !S.mock.done) gradeMock(true); return left; });
   renderMock();
 }
@@ -443,7 +445,8 @@ function renderStats() {
   rows.forEach(r => {
     let j; try { j = JSON.parse(r.choicesJson || "{}"); } catch (e) { return; }
     (j.answers || []).forEach(a => answers.push({ ...a, game: r.gameName }));
-    if (j.house) { const h = j.house; housePts[h] = housePts[h] || { pts: 0, n: 0 }; housePts[h].pts += Number(j.points || j.score || 0); housePts[h].n++; }
+    // 기숙사 점수는 모둠 보스전(points)만. 모의고사 개인 점수(score)는 합계에 넣지 않는다
+    if (j.house && j.points != null) { const h = j.house; housePts[h] = housePts[h] || { pts: 0, n: 0 }; housePts[h].pts += Number(j.points || 0); housePts[h].n++; }
   });
   const byType = {}, byQ = {};
   answers.forEach(a => {
@@ -454,7 +457,8 @@ function renderStats() {
   v.innerHTML = `<div class="card"><div class="q-meta"><span>기록 ${rows.length}건 · 답 ${answers.length}개 ${ban ? "· " + ban + "반" : "· 전체"}</span><span><button class="btn" type="button" id="reloadBtn">새로고침</button> <button class="btn" type="button" id="copyBtn">표 복사</button></span></div>
     <h2 class="h2" style="margin-top:10px">기숙사 점수</h2><table class="tbl"><thead><tr><th>기숙사</th><th>제출</th><th>점수 합</th></tr></thead><tbody>${HOUSES.map(h => `<tr><td>${h.icon} ${esc(h.name)}</td><td class="num">${(housePts[h.id] || {}).n || 0}</td><td class="num">${(housePts[h.id] || {}).pts || 0}</td></tr>`).join("")}</tbody></table>
     <h2 class="h2" style="margin-top:14px">유형별 정답률</h2><table class="tbl"><thead><tr><th>유형</th><th>답 수</th><th>정답률</th></tr></thead><tbody>${Object.entries(byType).map(([t, x]) => `<tr><td>${esc(t)}</td><td class="num">${x.n}</td><td><span class="pct">${Math.round(x.ok / x.n * 100)}%</span><div class="meter"><i style="width:${Math.round(x.ok / x.n * 100)}%"></i></div></td></tr>`).join("")}</tbody></table>
-    <h2 class="h2" style="margin-top:14px">오답 상위 문항 (오답 5분에 짚을 것)</h2><table class="tbl"><thead><tr><th>문항</th><th>정답률</th><th>많이 고른 답</th></tr></thead><tbody>${worst.map(w => { const q = qById(w.id); if (!q) return ""; const top = Object.entries(w.picks).sort((a, b) => b[1] - a[1])[0]; return `<tr><td><b>${esc(q.q)}</b><br><span class="src">${esc(q.src)} · 정답 ${CIRCLE[q.ans - 1]}</span></td><td class="num">${Math.round(w.rate * 100)}% (${w.ok}/${w.n})</td><td>${top ? CIRCLE[top[0] - 1] + " " + esc(q.ch[top[0] - 1]) : ""}</td></tr>`; }).join("") || "<tr><td colspan=3>아직 2번 이상 풀린 문항이 없어.</td></tr>"}</tbody></table>
+    <h2 class="h2" style="margin-top:14px">오답 상위 문항 (오답 5분에 짚을 것)</h2><table class="tbl"><thead><tr><th>문항</th><th>정답률</th><th>많이 고른 답</th></tr></thead><tbody>${worst.map(w => { const q = qById(w.id); if (!q) return ""; const top = Object.entries(w.picks).sort((a, b) => b[1] - a[1])[0]; const topTxt = !top ? "" : Number(top[0]) ? CIRCLE[top[0] - 1] + " " + esc(q.ch[top[0] - 1]) : "(안 풀음)";
+    return `<tr><td><b>${esc(q.q)}</b><br><span class="src">${esc(q.src)} · 정답 ${CIRCLE[q.ans - 1]}</span></td><td class="num">${Math.round(w.rate * 100)}% (${w.ok}/${w.n})</td><td>${topTxt}</td></tr>`; }).join("") || "<tr><td colspan=3>아직 2번 이상 풀린 문항이 없어.</td></tr>"}</tbody></table>
     <p class="hint">차시별 제출: ${Object.entries(sessions).map(([g, n]) => esc(g) + " " + n).join(" · ") || "없음"}</p></div>`;
   $("reloadBtn").addEventListener("click", () => { T.rows = null; loadStats(); });
   $("copyBtn").addEventListener("click", () => {
