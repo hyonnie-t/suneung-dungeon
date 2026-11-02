@@ -133,7 +133,8 @@ function renderPlay() {
       <p><b>HP ${pt.bossMax}</b> · 문제 ${pt.bossMax}개를 맞히면 쓰러져. 틀리면 우리 하트가 하나 깎여.</p>
       <p class="hint">순서: ${S.members.map(esc).join(" → ")}</p>
       <button class="btn-main" type="button" id="goBtn">전투 시작</button></div>`;
-    $("goBtn").addEventListener("click", () => { pt.startAt = Date.now(); S.run.state = "q"; S.run.picked = null; renderPlay(); });
+    // 앞 층을 하트 0으로 끝냈으면(마지막 문제를 틀리며 문항이 떨어진 경우) 새 층은 오답 노트 부활부터
+    $("goBtn").addEventListener("click", () => { pt.startAt = Date.now(); S.run.state = S.run.teamHp <= 0 ? "revive" : "q"; S.run.picked = null; renderPlay(); });
     rise(v); return;
   }
   if (st === "q" || st === "fb") {
