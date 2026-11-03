@@ -241,6 +241,14 @@ mark.clue{background:#ffe066;color:inherit;padding:0 2px;border-radius:3px;box-s
 .warn-box{background:var(--torch-wash);border:1px solid var(--torch);border-radius:8px;padding:8px 12px;font:15px var(--sans);color:var(--ink)}
 .bank-b{margin:12px 0 2px;font:800 1rem var(--sans);color:var(--accent)}
 details.card summary{cursor:pointer;font-family:var(--sans)}
+.roster-grid{display:grid;gap:8px;grid-template-columns:repeat(2,1fr)}
+@media (min-width:768px){.roster-grid{grid-template-columns:repeat(4,1fr)}}
+.roster-col{background:#fff;border:1.5px solid var(--hcolor);border-radius:10px;padding:8px 10px;font-family:var(--sans)}
+.roster-col b{display:block;color:var(--hcolor)}
+.roster-col small{display:block;color:var(--muted);font-size:14px}
+.roster-col ul{margin:6px 0 0;padding-left:1.1em;font-size:15px}
+.tier{display:inline-block;padding:0 6px;border-radius:6px;font-size:13px;font-weight:700;background:var(--paper-deep)}
+.tier.t-상{background:#dbeedf;color:var(--ok)}.tier.t-하{background:var(--bad-wash);color:var(--bad)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rise{opacity:1;transform:none}}
 .q-box u{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent);font-weight:700}
