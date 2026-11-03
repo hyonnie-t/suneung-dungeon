@@ -6,17 +6,17 @@
 <script src="https://hyonnie-t.github.io/history26/snippets/portal_auth.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>수능 던전 — 3학년 한국사</title>
-<link rel="stylesheet" href="style.css?v=20261103b">
+<link rel="stylesheet" href="style.css?v=20261103v2">
 </head>
 <body>
-<div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어</div>
+<div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 열쇠 글자 없이도 넘어갈 수 있어</div>
 
 <!-- ───────── 입구 ───────── -->
 <section id="s0" class="page">
   <header class="gate-head">
     <p class="eyebrow">3학년 한국사 · 조선 후기 → 현대</p>
     <h1 class="title">수능 던전</h1>
-    <p class="lead">층마다 보스가 기다려. 모둠이 돌아가며 한 문제씩 풀고, 맞히면 보스가 다치고 틀리면 우리가 다쳐.</p>
+    <p class="lead">선생님이 칠판에서 문제를 함께 풀며 길을 열어 줘. 너는 네 태블릿으로 매 문제 직접 답하고, 맞힐 때마다 반 전체가 보스를 깎아.</p>
   </header>
 
   <div class="card">
@@ -25,37 +25,32 @@
       <label class="field"><span>학번</span><input id="sid" type="text" inputmode="numeric" maxlength="5" placeholder="5자리 숫자"></label>
       <label class="field"><span>이름</span><input id="sname" type="text" maxlength="12" placeholder="이름"></label>
     </div>
-    <p class="hint">태블릿을 든 사람 학번이면 돼. 모둠원은 아래에 넣어.</p>
   </div>
 
-  <div class="card">
+  <div class="card" id="sessionCard">
     <h2 class="h2">② 오늘 던전</h2>
     <div id="sessionPick" class="pick-grid"></div>
-    <details class="more"><summary>유연 차시(층 하나씩)·모의고사 20문항</summary><div id="sessionPickSplit" class="pick-grid"></div></details>
-  </div>
-
-  <div class="card" id="houseCard">
-    <h2 class="h2">③ 기숙사(모둠)</h2>
-    <div id="housePick" class="house-grid"></div>
-    <label class="field"><span>모둠원 이름(쉼표로, 돌아가며 풀 순서)</span><input id="members" type="text" placeholder="순서대로 이름만"></label>
+    <details class="more"><summary>층 하나씩 하는 차시·모의고사 20문항</summary><div id="sessionPickSplit" class="pick-grid"></div></details>
   </div>
 
   <p id="startErr" class="err" role="alert"></p>
   <button id="startBtn" class="btn-main" type="button">던전 입장</button>
 </section>
 
-<!-- ───────── 보스전 ───────── -->
+<!-- ───────── 기숙사(성향 테스트) ───────── -->
+<section id="sHouse" class="page" hidden>
+  <div id="houseView"></div>
+</section>
+
+<!-- ───────── 수업(개인 태블릿) ───────── -->
 <section id="sPlay" class="page" hidden>
   <div class="hud" id="hud">
     <div class="hud-top">
       <span class="hud-floor" id="hudFloor"></span>
-      <span class="hud-turn" id="hudTurn"></span>
-      <span class="hud-time" id="hudTime">0:00</span>
+      <span class="hud-turn" id="hudStep"></span>
+      <span class="hud-house" id="hudHouse"></span>
     </div>
-    <div class="hud-bars">
-      <div class="bar boss"><span class="bar-label" id="bossName">보스</span><div class="bar-track"><div class="bar-fill" id="bossBar"></div></div><span class="bar-num" id="bossNum"></span></div>
-      <div class="bar team"><span class="bar-label">우리 모둠</span><div class="hearts" id="teamHearts"></div></div>
-    </div>
+    <div class="hud-stats"><span>내 점수 <b id="hudPts">0</b></span><span>보스에게 준 피해 <b id="hudDmg">0</b></span><span>도감 <b id="hudCards">0</b>장</span></div>
   </div>
   <div id="playView"></div>
 </section>
@@ -81,25 +76,29 @@
 <section id="sTeacher" class="page wide" hidden>
   <header class="gate-head">
     <p class="eyebrow">교사 화면</p>
-    <h1 class="title">수능 던전 · 강의 카드와 통계</h1>
+    <h1 class="title">수능 던전 · 수업 진행</h1>
   </header>
   <nav class="tabs" role="tablist">
-    <button class="tab on" data-tab="cards" role="tab">강의 카드</button>
-    <button class="tab" data-tab="stats" role="tab">정답률·오답</button>
+    <button class="tab on" data-tab="live" role="tab">수업 진행</button>
+    <button class="tab" data-tab="houses" role="tab">기숙사 배정</button>
+    <button class="tab" data-tab="points" role="tab">기숙사 포인트</button>
     <button class="tab" data-tab="bank" role="tab">문제 은행</button>
   </nav>
-  <div id="tCards" class="tab-pane"></div>
-  <div id="tStats" class="tab-pane" hidden></div>
+  <div id="tLive" class="tab-pane"></div>
+  <div id="tHouses" class="tab-pane" hidden></div>
+  <div id="tPoints" class="tab-pane" hidden></div>
   <div id="tBank" class="tab-pane" hidden></div>
 </section>
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="snippets/focus_guard.js?v=20261103b"></script>
-<script src="snippets/draft_guard.js?v=20261103b"></script>
-<script src="snippets/glossary.js?v=20261103b"></script>
-<script src="data.js?v=20261103b"></script>
-<script src="questions.js?v=20261103b"></script>
-<script src="app.js?v=20261103b"></script>
+<script src="snippets/focus_guard.js?v=20261103v2"></script>
+<script src="snippets/draft_guard.js?v=20261103v2"></script>
+<script src="snippets/glossary.js?v=20261103v2"></script>
+<script src="data.js?v=20261103v2"></script>
+<script src="questions.js?v=20261103v2"></script>
+<script src="plan.js?v=20261103v2"></script>
+<script src="logic.js?v=20261103v2"></script>
+<script src="app.js?v=20261103v2"></script>
 </body>
 </html>

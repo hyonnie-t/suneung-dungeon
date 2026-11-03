@@ -1,6 +1,6 @@
-/* 수능 던전 — 층·기숙사·차시·강의 카드·칭호·어휘 (data.js). 문항은 questions.js. */
+/* 수능 던전 — 층·기숙사·성향 테스트·차시·층 정리 카드·칭호·어휘 (data.js). 문항은 questions.js, 개념 묶음은 plan.js. */
 
-// 층(시대). boss: 이름·아이콘·등장 대사·처치 대사. HP는 문항 수로 정해진다.
+// 층(시대). boss: 이름·아이콘·등장 대사·처치 대사. HP는 반 전체가 같이 깎는다(logic.js bossHp).
 const LAYERS = [
   { id: "L1", name: "조선 후기의 정치 변동", short: "정치 변동", boss: { name: "세도 가문의 문중 어른", icon: "👑", line: "왕이 어리니 나라 일은 우리 집안이 맡지. 비변사는 우리 손 안이다.", defeat: "삼정의 문란까지 들통났군… 백성의 분노가 밀려온다." } },
   { id: "L2", name: "농민 봉기·실학·서민 문화", short: "농민 봉기·실학", boss: { name: "탐관오리 수령", icon: "💰", line: "군포는 죽은 사람 몫도, 갓난아이 몫도 걷는다. 내 곳간은 늘 비어 있거든.", defeat: "홍경래와 진주의 농민들이… 실학자들의 글까지… 내 자리는 끝이다." } },
@@ -11,29 +11,42 @@ const LAYERS = [
   { id: "L7", name: "광복·분단·6·25·민주주의·경제", short: "현대", boss: { name: "독재의 그림자", icon: "🌑", line: "헌법쯤이야 사사오입으로, 유신으로 바꾸면 그만이다.", defeat: "4·19, 5·18, 6월 항쟁… 시민의 광장이 나를 걷어냈다." } }
 ];
 
-// 기숙사(모둠) — ⓐ 문화사·ⓒ 총복습 앱과 이름·색을 맞춘다(바꾸면 세 앱 같이).
+// 기숙사 — 2판(2026-11-03)부터 반마다 학기말 성적이 고르게 나뉘게 백엔드가 배정한다(houseAssign). ⓒ 총복습도 이 기숙사를 쓴다.
+// name은 백엔드 mode=house가 돌려주는 이름과 같아야 한다. persona는 «역사 성향 테스트» 결과 화면(테스트 답과 상관없이 배정된 기숙사로 나온다).
 const HOUSES = [
-  { id: "cheongryong", name: "청룡", icon: "🐉", color: "#2f6b8f" },
-  { id: "baekho", name: "백호", icon: "🐯", color: "#7b7f88" },
-  { id: "jujak", name: "주작", icon: "🔥", color: "#b03a3a" },
-  { id: "hyeonmu", name: "현무", icon: "🐢", color: "#2f5d4f" }
+  { id: "cheongryong", name: "청룡", icon: "🐉", color: "#2f6b8f",
+    persona: { type: "개혁가형", desc: "낡은 제도를 고쳐 새 길을 여는 사람. 규장각을 세운 정조, 토지 개혁을 꿈꾼 정약용과 같은 기운이야." } },
+  { id: "baekho", name: "백호", icon: "🐯", color: "#7b7f88",
+    persona: { type: "수호자형", desc: "공동체를 지키려 먼저 나서는 사람. 의병과 독립군, 3·1 운동의 학생들과 같은 기운이야." } },
+  { id: "jujak", name: "주작", icon: "🔥", color: "#b03a3a",
+    persona: { type: "개척자형", desc: "새 세상을 먼저 보고 문을 여는 사람. 청에 다녀와 『북학의』를 쓴 박제가, 개화파와 같은 기운이야." } },
+  { id: "hyeonmu", name: "현무", icon: "🐢", color: "#2f5d4f",
+    persona: { type: "기록자형", desc: "기억하고 남기는 사람. 『한국통사』의 박은식, 『우리말 큰사전』을 지킨 조선어 학회와 같은 기운이야." } }
 ];
 
-// 차시 구성. common = 공통 5차시(b1은 한 층 10문항, 나머지는 층당 6). split = 유연 모듈(층 하나씩, 문항 전부). 유연 +1 = ⓑ3를 L3/L4로, +2 = ⓑ4를 L5/L6로.
-// gameId → 포털 활동 id는 "수능던전_" + gameId.
+// 역사 성향 테스트(분위기용 4문항). 고른 답은 기록하지 않고 결과에도 쓰지 않는다 — 결과는 백엔드가 정해 둔 기숙사.
+const TEST = [
+  { q: "조선 후기 장시에 놀러 갔어. 가장 먼저 할 일은?", opts: ["새로 나온 물건이 왜 잘 팔리는지 따져 본다", "소매치기가 없는지 주변을 살핀다", "멀리서 온 상인에게 바깥 세상 이야기를 묻는다", "본 것을 수첩에 꼼꼼히 적어 둔다"] },
+  { q: "1919년 3월 1일, 탑골 공원 근처에 있다면?", opts: ["만세 뒤에 어떤 나라를 세울지 생각한다", "다친 사람이 없게 친구들 손을 잡는다", "다른 지역에도 소식을 전하러 달려간다", "오늘 일을 기록으로 남겨 둔다"] },
+  { q: "타임머신으로 한 사람만 만날 수 있다면?", opts: ["정조", "안중근", "박제가", "박은식"] },
+  { q: "역사 동아리에서 내가 맡고 싶은 일은?", opts: ["동아리 규칙을 새로 짜기", "모두가 끝까지 함께하게 챙기기", "처음 해 보는 활동 찾아오기", "활동 기록·사진 정리하기"] }
+];
+
+// 차시. 한 차시 = 개념 묶음(plan.js) 여러 개. 층 하나 차시는 묶음 3개 × (시범 1 + 공격 2), 두 층 차시(two)와 ⓑ5(short)는 core 묶음 × (시범 1 + 공격 1).
+// gameId → 포털 활동 id는 "수능던전_" + gameId(1판과 같은 id — 포털 등록을 바꾸지 않는다).
 const SESSIONS = [
-  { id: "b1", gameId: "b1", group: "common", title: "ⓑ1 조선 후기의 정치 변동", desc: "한 층, 보스 세도 가문 (문항 10개: 비변사·조세·예송·환국·탕평·세도)", perFloor: 10, parts: [{ layer: "L1" }] },
-  { id: "b2", gameId: "b2", group: "common", title: "ⓑ2 농민 봉기·사회경제 + 실학·서민 문화", desc: "탐관오리 2연전: 1층 봉기·사회경제(6) → 2층 실학·문화(4)", perFloor: 6, parts: [{ layer: "L2", sub: "a" }, { layer: "L2", sub: "b" }] },
-  { id: "b3", gameId: "b3", group: "common", title: "ⓑ3 개항·개화 + 동학·대한 제국·국권 피탈", desc: "1층 척화비 수호자 → 2층 통감 이토", perFloor: 6, parts: [{ layer: "L3" }, { layer: "L4" }] },
-  { id: "b4", gameId: "b4", group: "common", title: "ⓑ4 일제 통치·3·1·임정 + 무장 투쟁", desc: "1층 조선 총독부 → 2층 일본군 토벌대", perFloor: 6, parts: [{ layer: "L5" }, { layer: "L6" }] },
-  { id: "b5", gameId: "b5", group: "common", title: "ⓑ5 현대 + 통합 모의고사", desc: "현대 보스전 6문항 → 개인전 15문항(20분)", perFloor: 6, parts: [{ layer: "L7" }], mockCount: 15 },
-  { id: "L1", gameId: "L1", group: "split", title: "L1 탕평·세도 정치", desc: "층 하나 전부(12문항)", parts: [{ layer: "L1" }] },
-  { id: "L2", gameId: "L2", group: "split", title: "L2 농민 봉기·실학·서민 문화", desc: "층 하나 전부(a+b 10문항)", parts: [{ layer: "L2" }] },
-  { id: "L3", gameId: "L3", group: "split", title: "L3 개항·개화", desc: "유연 +1 · 층 하나 전부", parts: [{ layer: "L3" }] },
-  { id: "L4", gameId: "L4", group: "split", title: "L4 동학·갑오·대한 제국·국권 피탈", desc: "유연 +1 · 층 하나 전부", parts: [{ layer: "L4" }] },
-  { id: "L5", gameId: "L5", group: "split", title: "L5 일제 통치·3·1·임정", desc: "유연 +2 · 층 하나 전부", parts: [{ layer: "L5" }] },
-  { id: "L6", gameId: "L6", group: "split", title: "L6 무장 투쟁·민족 문화·사회 운동", desc: "유연 +2 · 층 하나 전부", parts: [{ layer: "L6" }] },
-  { id: "L7", gameId: "L7", group: "split", title: "L7 현대", desc: "층 하나 전부", parts: [{ layer: "L7" }] },
+  { id: "b1", gameId: "b1", group: "common", title: "ⓑ1 조선 후기의 정치 변동", desc: "비변사·5군영·대동법 → 예송·환국 → 탕평·세도 (묶음 3개)", parts: [{ layer: "L1" }] },
+  { id: "b2", gameId: "b2", group: "common", title: "ⓑ2 농민 봉기·사회경제·실학", desc: "농민 봉기 → 신분제·시장 → 실학·서민 문화 (묶음 3개)", parts: [{ layer: "L2" }] },
+  { id: "b3", gameId: "b3", group: "common", title: "ⓑ3 개항·개화 + 동학·국권 피탈", desc: "두 층 · 묶음 4개", parts: [{ layer: "L3" }, { layer: "L4" }] },
+  { id: "b4", gameId: "b4", group: "common", title: "ⓑ4 일제 통치·3·1 + 무장 투쟁·사회 운동", desc: "두 층 · 묶음 4개", parts: [{ layer: "L5" }, { layer: "L6" }] },
+  { id: "b5", gameId: "b5", group: "common", title: "ⓑ5 현대 + 통합 모의고사", desc: "현대 묶음 2개 → 개인 모의고사 15문항(20분)", parts: [{ layer: "L7" }], short: true, mockCount: 15 },
+  { id: "L1", gameId: "L1", group: "split", title: "L1 조선 후기의 정치 변동", desc: "층 하나 · 묶음 3개", parts: [{ layer: "L1" }] },
+  { id: "L2", gameId: "L2", group: "split", title: "L2 농민 봉기·실학·서민 문화", desc: "층 하나 · 묶음 3개", parts: [{ layer: "L2" }] },
+  { id: "L3", gameId: "L3", group: "split", title: "L3 개항·개화", desc: "유연 +1 · 묶음 3개", parts: [{ layer: "L3" }] },
+  { id: "L4", gameId: "L4", group: "split", title: "L4 동학·갑오·대한 제국·국권 피탈", desc: "유연 +1 · 묶음 3개", parts: [{ layer: "L4" }] },
+  { id: "L5", gameId: "L5", group: "split", title: "L5 일제 통치·3·1·임정", desc: "유연 +2 · 묶음 3개", parts: [{ layer: "L5" }] },
+  { id: "L6", gameId: "L6", group: "split", title: "L6 무장 투쟁·민족 문화·사회 운동", desc: "유연 +2 · 묶음 3개", parts: [{ layer: "L6" }] },
+  { id: "L7", gameId: "L7", group: "split", title: "L7 현대", desc: "층 하나 · 묶음 3개", parts: [{ layer: "L7" }] },
   { id: "mock", gameId: "모의고사", group: "split", title: "통합 모의고사 20문항", desc: "유연 반 한 차시 · 개인전 25분", mockOnly: true, mockCount: 20 }
 ];
 
@@ -42,11 +55,11 @@ const TITLES = [
   { min: 1.0, name: "던전 마스터", icon: "🏰", desc: "한 문제도 틀리지 않았어. 수능 한국사 1등급도 문제없겠다." },
   { min: 0.8, name: "보스 사냥꾼", icon: "⚔️", desc: "보스급 실력. 틀린 문제 해설만 한 번 더 보면 끝." },
   { min: 0.6, name: "던전 탐험가", icon: "🧭", desc: "길은 다 알아. 연표·사료 유형을 조금만 더 다져 보자." },
-  { min: 0.4, name: "견습 모험가", icon: "🕯️", desc: "절반은 넘었어. 강의 카드의 «핵심 흐름»을 다시 읽어 보자." },
+  { min: 0.4, name: "견습 모험가", icon: "🕯️", desc: "절반은 넘었어. 도감의 개념 카드를 다시 읽어 보자." },
   { min: 0, name: "초보 모험가", icon: "🚪", desc: "던전에 들어온 것만으로 시작이야. 오답 해설을 한 문제씩 읽자." }
 ];
 
-// 강의 카드 «수능에 이렇게 나온다» — 층마다 1장. 교사 화면(?teacher=1)에 투사. 같은 내용이 docs/강의카드.md에 있다.
+// 층 정리 카드 «수능에 이렇게 나온다» — 층마다 1장. 2판에서는 교사 화면 «수업 진행»의 «층 정리» 버튼으로 띄운다(마무리·여유 시간). 같은 내용이 docs/강의카드.md에 있다.
 const CARDS = [
   {
     "layer": "L1",
