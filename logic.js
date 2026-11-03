@@ -42,7 +42,7 @@ const Logic = (() => {
       attackN: attacks.length, attackOk: attacks.filter(a => a.ok).length
     };
   }
-  // 보스 HP = 공격 문항 수 × 첫 공격 문제 때 인원 × 0.7(올림, 최소 1)
+  // 보스 HP = 공격 문항 수 × 참여 인원 × 0.7(올림, 최소 1). 수업 중엔 첫 공격 문제 공개 때 낸 인원, 결산은 결과를 낸 인원
   function bossHp(attackCount, present) {
     return Math.max(1, Math.ceil(attackCount * Math.max(1, present) * 0.7));
   }
@@ -75,9 +75,10 @@ const Logic = (() => {
       if (s) { by[h].submitted++; by[h].sum += s.pts || 0; by[h].ok += s.attackOk || 0; by[h].tried += s.attackN || 0; by[h].dmg += s.dmg || 0; }
     });
     const avg = {};
-    Object.values(by).forEach(x => { x.avg = x.n ? Math.round(x.sum / x.n * 10) / 10 : null; x.rate = x.tried ? x.ok / x.tried : 0; avg[x.house] = x.avg; });
+    Object.values(by).forEach(x => { x.avg = x.n ? Math.round(x.sum / x.n * 10) / 10 : null; x.rate = x.tried ? x.ok / x.tried : 0; avg[x.house] = x.n ? x.sum / x.n : null; }); // 순위는 반올림 전 값으로
     const rank = rankPoints(avg);
-    const present = Object.values(by).reduce((s, x) => s + x.n, 0);
+    // 보스 HP의 인원 = 그 차시에 결과를 낸 학생(교사 수업 화면이 «분포를 낸 학생»으로 어림하는 것과 같은 기준)
+    const present = Object.values(by).reduce((s, x) => s + x.submitted, 0);
     const totalDmg = Object.values(by).reduce((s, x) => s + x.dmg, 0);
     const slain = present > 0 && attackCount > 0 && totalDmg >= bossHp(attackCount, present);
     Object.values(by).forEach(x => {

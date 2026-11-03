@@ -35,6 +35,13 @@ test("개인 점수: 한 줄 메모는 틀린 공격 문제에만, 10자 이상"
   assert.equal(Logic.personal([{ kind: "attack", pick: 1, conf: "sure", ok: false }], []).pts, 0, "0 아래로 안 감");
 });
 
+test("결산 순위는 반올림 전 평균으로", () => {
+  const roster = ["30501", "30502", "30503", "30504", "30505", "30506"].map((id, i) => ({ studentId: id, house: i < 3 ? "청룡" : "백호" }));
+  const subs = { "30501": { pts: 10 }, "30502": { pts: 10 }, "30503": { pts: 11 }, "30504": { pts: 10 }, "30505": { pts: 10 }, "30506": { pts: 10.9 } };
+  const r = Logic.sessionHouses(roster, subs, [], null, 6);
+  assert.equal(r.houses["청룡"].rankPts, 40); assert.equal(r.houses["백호"].rankPts, 30);
+});
+
 test("순위 포인트: 동점은 같은 포인트, 다음 순위 건너뜀", () => {
   assert.deepEqual(Logic.rankPoints({ 청룡: 5, 백호: 5, 주작: 3, 현무: 1 }), { 청룡: 40, 백호: 40, 주작: 20, 현무: 10 });
   assert.deepEqual(Logic.rankPoints({ 청룡: 2, 백호: null, 주작: 3 }), { 청룡: 30, 주작: 40 });
@@ -52,7 +59,7 @@ test("기숙사 결산: 분모는 출석자 전원, 미제출 0점, 보너스", 
   assert.equal(r.houses["백호"].rankPts, 40);
   assert.equal(r.houses["백호"].bonus.full, 5); assert.equal(r.houses["청룡"].bonus.full, 0);
   assert.equal(r.houses["청룡"].bonus.growth, 5, "정답률 0.5 → 1.0");
-  assert.equal(r.hp, Math.ceil(6 * 4 * 0.7)); assert.equal(r.slain, false);
+  assert.equal(r.hp, Math.ceil(6 * 3 * 0.7), "HP 인원 = 낸 학생 3명"); assert.equal(r.slain, true, "피해 14 ≥ HP 13"); assert.equal(r.houses["청룡"].bonus.boss, 5);
   const r2 = Logic.sessionHouses(roster, subs, ["30502"], null, 6);
   assert.equal(r2.houses["청룡"].avg, 10, "결석은 분모에서 뺀다");
   assert.equal(r2.houses["청룡"].bonus.full, 5);
