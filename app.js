@@ -715,8 +715,15 @@ function renderAssign() {
     <p>반마다 학기말 합계로 줄을 세워 4명씩 띠를 짓고, 띠마다 기숙사 4곳에 1명씩 넣은 뒤 같은 띠 안에서 맞바꿔 기숙사 평균을 맞춘다. 학생은 성향 테스트 뒤 이 기숙사를 결과로 본다(테스트 답과 상관없음).</p>
     <div class="row3">${tokenField()}<label class="field"><span>성적 기준</span><select id="basisIn"><option value="both">학기말 합계(수행 30 + 지필 70)</option><option value="exam">지필만</option></select></label><span></span></div>
     <p id="aErr" class="err" style="color:var(--bad)"></p>
-    <div class="btn-row"><button class="btn primary" type="button" id="aPrev">미리보기</button>${a && a.result === "success" ? `<button class="btn" type="button" id="aConfirm" ${a.confirmed ? "disabled" : ""}>${a.confirmed ? "확정됨 ✓" : "이대로 확정"}</button>` : ""}</div></div>
+    <div class="btn-row"><button class="btn primary" type="button" id="aPrev">미리보기</button>${a && a.result === "success" ? `<button class="btn" type="button" id="aConfirm" ${a.confirmed ? "disabled" : ""}>${a.confirmed ? "확정됨 ✓" : "이대로 확정"}</button>` : ""}<button class="btn" type="button" id="aRoster">확정 명단 보기</button></div></div>
+    ${T.rosterView ? rosterHTML(T.rosterView, a) : ""}
     ${a && a.result === "success" ? assignHTML(a) : ""}`;
+  $("aRoster").addEventListener("click", async () => {
+    readToken(); if (!T.token) { $("aErr").textContent = "토큰을 넣어 줘."; return; }
+    try { const j = await tGet({ mode: "houseRoster", token: T.token, grade: "3" }); if (j.result !== "success") throw new Error(j.message); T.rosterView = j.list; }
+    catch (e) { $("aErr").textContent = e.message || "명단을 불러오지 못했어."; return; }
+    renderAssign();
+  });
   $("aPrev").addEventListener("click", async () => {
     readToken(); if (!T.token) { $("aErr").textContent = "토큰을 넣어 줘."; return; }
     $("aPrev").disabled = true; $("aPrev").textContent = "계산 중…";
@@ -734,6 +741,26 @@ function renderAssign() {
       T.assign = { ...j, basis: T.assign.basis }; toast("확정했어"); renderAssign();
     } catch (e) { $("aErr").textContent = e.message || "확정 실패"; }
   });
+}
+/* 확정 명단: 반마다 기숙사 4칸에 이름. 미리보기를 불러 둔 상태면 반 안 순위로 상·중·하 띠를 붙인다(교사 화면 전용, 칠판에 띄우지 말 것). */
+function rosterHTML(list, a) {
+  if (!list.length) return `<div class="card"><p>확정된 명단이 없어.</p></div>`;
+  const tier = {};
+  if (a && a.list) {
+    const byBan = {};
+    a.list.forEach(s => { (byBan[s.studentId.slice(1, 3)] = byBan[s.studentId.slice(1, 3)] || []).push(s); });
+    Object.values(byBan).forEach(arr => arr.slice().sort((x, y) => y.total - x.total).forEach((s, i, all) => {
+      tier[s.studentId] = i < all.length / 3 ? "상" : i < all.length * 2 / 3 ? "중" : "하";
+    }));
+  }
+  const byBan = {};
+  list.forEach(s => { (byBan[s.studentId.slice(1, 3)] = byBan[s.studentId.slice(1, 3)] || []).push(s); });
+  return `<div class="card"><h2 class="h2">확정 명단 — 기숙사별</h2>${Object.keys(tier).length ? `<p class="hint">이름 옆 상·중·하는 반 안 학기말 합계 순위(세 등분). 학생에게 보이지 말 것.</p>` : `<p class="hint">«미리보기»를 먼저 누르면 이름 옆에 상·중·하 띠가 같이 나와.</p>`}
+    ${Object.entries(byBan).sort().map(([ban, arr]) => `<h3 class="bank-b">${Number(ban)}반 (${arr.length}명)</h3>
+      <div class="roster-grid">${HOUSES.map(h => { const ms = arr.filter(s => s.house === h.name).sort((x, y) => x.studentId < y.studentId ? -1 : 1);
+        const cnt = { 상: 0, 중: 0, 하: 0 }; ms.forEach(s => { if (tier[s.studentId]) cnt[tier[s.studentId]]++; });
+        return `<div class="roster-col" style="--hcolor:${h.color}"><b>${h.icon} ${esc(h.name)} · ${ms.length}명</b>${Object.keys(tier).length ? `<small>상 ${cnt.상} · 중 ${cnt.중} · 하 ${cnt.하}</small>` : ""}
+          <ul>${ms.map(s => `<li>${Number(s.studentId.slice(3))} ${esc(s.name)}${tier[s.studentId] ? ` <span class="tier t-${tier[s.studentId]}">${tier[s.studentId]}</span>` : ""}</li>`).join("")}</ul></div>`; }).join("")}</div>`).join("")}</div>`;
 }
 function assignHTML(a) {
   const byBan = {};
