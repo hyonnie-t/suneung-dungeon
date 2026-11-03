@@ -127,6 +127,7 @@ function startApp() {
   if (cached && cached.name === name && houseByName(cached.house)) {
     S.house = cached.house; S.houseSource = cached.source || "server";
     if (S.houseSource !== "self") { startRun(); return; }
+    $("startBtn").disabled = true; $("startBtn").textContent = "기숙사 확인 중…";
     // 지난번에 직접 골랐으면 명단이 생겼는지 다시 묻는다(명단이 있으면 명단 기숙사로 바꾼다 — 점수가 가는 곳과 맞추려고)
     fetchHouse().then(h => { if (h) { S.house = h; S.houseSource = "server"; store.set("sd2:house:" + sid, { name, house: h, source: "server" }); } startRun(); });
     return;
@@ -138,9 +139,9 @@ async function fetchHouse() {
   if (S.preview) return HOUSES[Number(S.sid.slice(3)) % HOUSES.length].name;
   try {
     const u = CONFIG.SHEET_WEBAPP_URL + "?mode=house&studentId=" + encodeURIComponent(S.sid) + "&name=" + encodeURIComponent(S.name);
-    const json = await (await fetch(u)).json();
+    const json = await Promise.race([fetch(u).then(r => r.json()), new Promise((_, no) => setTimeout(() => no(new Error("timeout")), 6000))]);
     if (json.result === "success" && json.found && houseByName(json.house)) return json.house;
-  } catch (e) { /* 못 찾음과 같이 처리 */ }
+  } catch (e) { /* 못 찾음·느림은 같이 처리 */ }
   return "";
 }
 
@@ -201,7 +202,11 @@ function saveRun() { store.set(runKey(), { ...S.run, house: S.house, houseSource
 function startRun() {
   S.steps = stepsOf(S.session);
   const saved = store.get(runKey());
-  if (saved && saved.submitted && saved.done) { show("sEnd"); $("endView").innerHTML = `<div class="card"><h2 class="h2">${esc(S.session.title)}</h2><p>이 차시 결과는 이미 보냈어 ✓</p></div>`; return; }
+  if (saved && saved.submitted && saved.done) {
+    show("sEnd"); S.submitted = true;
+    $("endView").innerHTML = `<div class="card"><h2 class="h2">${esc(S.session.title)}</h2><p>이 차시 결과는 이미 보냈어 ✓</p><button class="btn-main" type="button" id="submitBtn" disabled>보냈어 ✓</button></div>`;
+    afterSubmit(); return;
+  }
   S.run = saved && saved.steps === S.steps.length ? saved : { steps: S.steps.length, cur: -1, phase: "lobby", answers: {}, notes: {}, cards: [], pending: null, picked: null, conf: "", submitted: false };
   S.submitted = !!S.run.submitted;
   show("sPlay");
@@ -363,6 +368,7 @@ function finishRun() {
     <button class="btn-main" type="button" id="submitBtn" ${S.submitted ? "disabled" : ""}>${S.submitted ? "보냈어 ✓" : "결과 보내기"}</button>
     <p class="hint">보내면 고칠 수 없어.</p></div>`;
   $("endView").querySelectorAll("textarea[data-q]").forEach(t => t.addEventListener("input", () => {
+    if (S.submitted) return;
     S.run.notes[t.dataset.q] = t.value; saveRun();
     $("endPts").textContent = myScore().pts;
   }));
@@ -404,6 +410,7 @@ async function submitRun() {
 }
 function afterSubmit() {
   $("submitBtn").textContent = "보냈어 ✓"; $("submitBtn").disabled = true;
+  $("endView").querySelectorAll("textarea[data-q]").forEach(t => { t.disabled = true; });
   if (S.session.mockCount && !$("mockGo")) {
     const b = document.createElement("button"); b.className = "btn-main"; b.type = "button"; b.id = "mockGo"; b.style.marginTop = "10px";
     b.textContent = `통합 모의고사 ${S.session.mockCount}문항 (개인전) 시작`;
