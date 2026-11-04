@@ -175,7 +175,7 @@ async function revealHouse() {
     <p class="eyebrow">너는</p><h2>${esc(h.persona.type)}!</h2>
     <p>${esc(h.persona.desc)}</p>
     <p class="house-name">${esc(h.name)} 기숙사가 너를 골랐어</p>
-    <p class="hint">이 기숙사로 수능 던전과 총복습까지 함께해.</p>
+    <p class="hint">이 기숙사로 수능 던전을 끝까지 함께해.</p>
     <button class="btn-main" type="button" id="enterBtn">던전 입장</button></div>`;
   $("enterBtn").addEventListener("click", startRun);
   rise(v);
