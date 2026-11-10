@@ -109,7 +109,7 @@ body{margin:0;background:var(--stone);color:var(--ink);font-family:var(--serif);
 .feedback{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:1rem;line-height:1.7}
 .feedback.ok{background:var(--ok-wash);border:1px solid #a9d5b6}
 .feedback.bad{background:var(--bad-wash);border:1px solid #efb3b3}
-.feedback b.lead{font-family:var(--sans)}
+.feedback b.lead{font-family:var(--sans);color:var(--ink)}
 .src{font:14px var(--sans);color:var(--muted);margin-top:6px}
 
 /* 보스 카드 */
