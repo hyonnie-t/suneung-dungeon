@@ -118,6 +118,8 @@ function startApp() {
   if (!S.session) { $("startErr").textContent = "오늘 던전(차시)을 골라 줘."; return; }
   $("startErr").textContent = "";
   S.sid = sid; S.name = name; S.grade = p.grade; S.ban = p.ban;
+  S.outText = ""; S.padletUrl = "";
+  loadPadletUrl(p.grade, p.ban).then(u => { S.padletUrl = u; syncPadlet(); });
   S.sessIdx = SESSIONS.indexOf(S.session);
   CONFIG.GAME_NAME = CONFIG.GAME_PREFIX + "_" + S.session.gameId;
   FocusGuard.start({ key: CONFIG.GAME_NAME + ":" + sid }); // 화면 이탈·붙여넣기 기록
@@ -204,7 +206,8 @@ function startRun() {
   const saved = store.get(runKey());
   if (saved && saved.submitted && saved.done) {
     show("sEnd"); S.submitted = true;
-    $("endView").innerHTML = `<div class="card"><h2 class="h2">${esc(S.session.title)}</h2><p>이 차시 결과는 이미 보냈어 ✓</p><button class="btn-main" type="button" id="submitBtn" disabled>보냈어 ✓</button></div>`;
+    $("endView").innerHTML = `<div class="card"><h2 class="h2">${esc(S.session.title)}</h2><p>이 차시 결과는 이미 보냈어 ✓</p><button class="btn-main" type="button" id="submitBtn" disabled>보냈어 ✓</button>${PADLET_BOX}</div>`;
+    $("copyBtn").addEventListener("click", copyOut);
     afterSubmit(); return;
   }
   S.run = saved && saved.steps === S.steps.length ? saved : { steps: S.steps.length, cur: -1, phase: "lobby", answers: {}, notes: {}, cards: [], pending: null, picked: null, conf: "", submitted: false };
@@ -365,18 +368,65 @@ function finishRun() {
         <label class="field note-box"><span>왜 헷갈렸는지 한 줄</span><textarea name="why_${i}" data-q="${esc(a.id)}" placeholder="떠오르는 대로 한 줄">${esc(S.run.notes[a.id] || "")}</textarea></label></div>`; }).join("")}</div>` : ""}
     <div class="card rise"><h2 class="h2">📖 오늘의 도감</h2>${S.run.cards.map(id => conceptCardHTML(bundleOf(id))).join("") || "<p>아직 모은 카드가 없어.</p>"}</div>
     <div class="card rise"><p id="endErr" class="err" style="color:var(--bad)"></p>
-    <button class="btn-main" type="button" id="submitBtn" ${S.submitted ? "disabled" : ""}>${S.submitted ? "보냈어 ✓" : "결과 보내기"}</button>
-    <p class="hint">보내면 고칠 수 없어.</p></div>`;
+    <button class="btn-main" type="button" id="submitBtn" ${S.submitted ? "disabled" : ""}>${S.submitted ? "보냈어 ✓" : "제출하고 복사하기"}</button>
+    <p class="hint">보내면 고칠 수 없어. 보낼 때 글이 복사돼.</p>
+    ${PADLET_BOX}</div>`;
   $("endView").querySelectorAll("textarea[data-q]").forEach(t => t.addEventListener("input", () => {
     if (S.submitted) return;
     S.run.notes[t.dataset.q] = t.value; saveRun();
     $("endPts").textContent = myScore().pts;
   }));
   $("submitBtn").addEventListener("click", submitRun);
+  $("copyBtn").addEventListener("click", copyOut);
+  syncPadlet();
   if (S.submitted) afterSubmit();
   rise($("endView"));
 }
 
+/* ── 제출하고 복사하기 → 패들렛 (제출 안 누르고 패들렛으로 가는 일을 막는다. 2026-11-10) ── */
+const PADLET_BOX = '<div class="padlet-box" style="margin-top:10px"><a id="padletBtn" class="btn-main" target="_blank" rel="noopener" style="text-decoration:none;text-align:center" hidden>우리 반 패들렛 열기</a>' +
+  '<button class="btn ghost" type="button" id="copyBtn" style="margin-top:8px" hidden>다시 복사</button><p id="padletMsg" class="hint"></p></div>';
+function ensureUrlScheme(u) { u = String(u || "").trim(); return u && !/^https?:\/\//i.test(u) ? "https://" + u : u; }
+/* 패들렛 링크는 백엔드 학년정보(포트폴리오)에서 가져온다(반 정보가 든 링크라 레포에 적지 않는다). */
+async function loadPadletUrl(grade, ban) {
+  try {
+    const res = await fetch(CONFIG.SHEET_WEBAPP_URL + "?mode=curriculum");
+    const json = await res.json();
+    const pf = json && json.grades && json.grades[String(grade)] && json.grades[String(grade)].portfolio;
+    if (!pf) return "";
+    return ensureUrlScheme(pf.urlByBan ? (pf.urlByBan[ban] || pf.urlByBan[String(ban)] || "") : (pf.url || ""));
+  } catch (e) { return ""; }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("data-no-draft", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e2) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+const copyFirst = (text) => Promise.race([copyText(text), new Promise(r => setTimeout(() => r(false), 3000))]); // 클릭 직후에 복사를 먼저 시작해야 브라우저가 허용한다
+function syncPadlet() {
+  const a = $("padletBtn"), c = $("copyBtn"), m = $("padletMsg");
+  if (!a || !c || !m) return;
+  c.hidden = !(S.submitted && S.outText); // 제출한 글은 태블릿에 남기지 않아서, 새로고침하면 다시 복사는 못 한다
+  if (!S.submitted) { a.hidden = true; m.textContent = S.padletUrl ? "보내면 패들렛 버튼이 열려." : ""; }
+  else if (S.padletUrl) { a.href = S.padletUrl; a.hidden = false; m.textContent = ""; }
+  else { a.hidden = true; m.textContent = "패들렛 링크는 선생님이 알려 준 곳을 써 줘."; }
+}
+async function copyOut() {
+  const ok = S.outText ? await copyText(S.outText) : false;
+  toast(ok ? "복사했어. 패들렛에 붙여 넣어 줘." : "복사가 안 됐어. 한 번 더 눌러 줘.");
+}
+function runText(sc, notes) {
+  const h = houseByName(S.house);
+  const head = ["[수능 던전] " + S.session.title + (h ? " · " + h.name + " 기숙사" : ""),
+    "내 점수 " + sc.pts + "점 · 보스 공격 정답 " + sc.attackOk + "/" + sc.attackN + " · 피해 " + sc.dmg + " · 도감 카드 " + S.run.cards.length];
+  return head.concat(notes.length ? ["", "왜 헷갈렸나"].concat(notes.map(n => "- " + n.text)) : []).join("\n");
+}
 async function postBody(body) {
   Object.assign(body, FocusGuard.payload());
   const res = await fetch(CONFIG.SHEET_WEBAPP_URL, { method: "POST", body: JSON.stringify(body) });
@@ -395,20 +445,25 @@ async function submitRun() {
     choicesJson: JSON.stringify({ v: 2, house: S.house, houseSource: S.houseSource, session: S.session.id, pts: sc.pts, dmg: sc.dmg, attackN: sc.attackN, attackOk: sc.attackOk, noteN: sc.noteN,
       answers: list.map(a => ({ id: a.id, kind: a.kind, type: (qById(a.id) || {}).type, pick: a.pick || 0, conf: a.conf || "", ok: !!a.ok })), notes, cards: S.run.cards })
   };
-  if (S.preview) { toast("미리보기라 저장하지 않았어"); S.submitted = true; afterSubmit(); return; }
+  const out = runText(sc, notes);
+  const copyP = copyFirst(out);
+  if (S.preview) { toast("미리보기라 저장하지 않았어"); S.submitted = true; S.outText = out; afterSubmit(); return; }
   S.sending = true; $("submitBtn").disabled = true; $("submitBtn").textContent = "보내는 중…";
   try {
     await postBody(body);
     if (window.DraftGuard) DraftGuard.clear(); // 저장 성공 → 임시저장 삭제
     S.submitted = true; S.run.submitted = true;
     store.set(runKey(), { steps: S.run.steps, submitted: true, done: true }); // 공용 태블릿: 답·메모는 지운다
-    toast("보냈어!"); afterSubmit();
+    S.outText = out; // 메모리에만 둔다(공용 태블릿에 글을 남기지 않는다)
+    const copied = await copyP;
+    toast(copied ? "보냈고 글도 복사했어!" : "보냈어! 복사가 안 됐으니 «다시 복사»를 눌러 줘."); afterSubmit();
   } catch (e) {
     $("endErr").textContent = /로그인/.test(e.message || "") ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘. (답은 이 태블릿에 남아 있어)";
     $("submitBtn").disabled = false; $("submitBtn").textContent = "다시 보내기";
   } finally { S.sending = false; }
 }
 function afterSubmit() {
+  syncPadlet();
   $("submitBtn").textContent = "보냈어 ✓"; $("submitBtn").disabled = true;
   $("endView").querySelectorAll("textarea[data-q]").forEach(t => { t.disabled = true; });
   if (S.session.mockCount && !$("mockGo")) {
@@ -482,8 +537,12 @@ function gradeMock(timeout) {
     </div>
     ${typeStatsHTML(m.results)}
     <p id="endErr" class="err" style="color:var(--bad)"></p>
-    <button class="btn-main" type="button" id="submitBtn">결과 보내기</button></div>
+    <button class="btn-main" type="button" id="submitBtn">제출하고 복사하기</button>
+    <p class="hint">보낼 때 결과가 복사돼.</p>
+    ${PADLET_BOX}</div>
     <div class="card rise"><h2 class="h2">틀린 문제 해설</h2>${m.results.filter(r => !r.ok).map(r => { const q = qById(r.id); return `<div class="wrong-item"><p class="st">${esc(q.q)}</p><p class="ex">내 답 ${r.pick ? CIRCLE[r.pick - 1] : "(안 함)"} · 정답 ${CIRCLE[q.ans - 1]} ${esc(q.ch[q.ans - 1])}<br>${esc(q.exp)}</p><p class="src">출처: ${esc(q.src)}</p></div>`; }).join("") || "<p>전부 맞혔어!</p>"}</div>`;
+  $("copyBtn").addEventListener("click", copyOut);
+  syncPadlet();
   $("submitBtn").addEventListener("click", async () => {
     if (S.sending || S.submitted) return;
     const body = {
@@ -492,10 +551,12 @@ function gradeMock(timeout) {
       reflection: "",
       choicesJson: JSON.stringify({ house: S.house, session: S.session.id, title: t.name, correct, total: m.qids.length, score, sec: m.sec, timeout: !!timeout, answers: m.results.map(r => ({ id: r.id, type: r.type, pick: r.pick, ok: r.ok })) })
     };
-    if (S.preview) { toast("미리보기라 저장하지 않았어"); $("submitBtn").textContent = "보냈어 ✓"; $("submitBtn").disabled = true; return; }
+    const outM = "[통합 모의고사] " + t.name + " · 정답 " + correct + "/" + m.qids.length + " · " + score + "점 · " + fmtSec(m.sec) + (timeout ? " · 시간 종료" : "");
+    const copyPM = copyFirst(outM);
+    if (S.preview) { toast("미리보기라 저장하지 않았어"); S.submitted = true; S.outText = outM; syncPadlet(); $("submitBtn").textContent = "보냈어 ✓"; $("submitBtn").disabled = true; return; }
     S.sending = true; $("submitBtn").disabled = true; $("submitBtn").textContent = "보내는 중…";
-    try { await postBody(body); if (window.DraftGuard) DraftGuard.clear(); S.submitted = true; toast("보냈어!"); $("submitBtn").textContent = "보냈어 ✓"; }
-    catch (e) { $("endErr").textContent = /로그인/.test(e.message || "") ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘."; $("submitBtn").disabled = false; $("submitBtn").textContent = "결과 보내기"; }
+    try { await postBody(body); if (window.DraftGuard) DraftGuard.clear(); S.outText = outM; const cpd = await copyPM; S.submitted = true; toast(cpd ? "보냈고 결과도 복사했어!" : "보냈어! 복사가 안 됐으니 «다시 복사»를 눌러 줘."); syncPadlet(); $("submitBtn").textContent = "보냈어 ✓"; }
+    catch (e) { $("endErr").textContent = /로그인/.test(e.message || "") ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘."; $("submitBtn").disabled = false; $("submitBtn").textContent = "다시 보내기"; }
     finally { S.sending = false; }
   });
   rise($("endView"));
@@ -699,7 +760,7 @@ function liveEndHTML(s, steps, sIdx) {
     <h3 class="h2" style="margin-top:12px">오늘 기숙사(수업 중 어림값)</h3>
     <ol class="rank">${order.map(x => `<li style="--hcolor:${x.h.color}">${x.h.icon} ${esc(x.h.name)} <b>${x.a.toFixed(1)}</b></li>`).join("") || "<li>분포 기록이 없어</li>"}</ol>
     <p class="big-key">학생 결과 화면 열쇠 <b>${esc(keyFor(sIdx, steps.length))}</b></p>
-    <p>학생은 이 글자를 넣고 «결과 보내기»까지 눌러야 기숙사 점수에 들어가(안 보내면 0점). 최종 포인트는 «기숙사 포인트» 탭에서.</p></div>`;
+    <p>학생은 이 글자를 넣고 «제출하고 복사하기»까지 눌러야 기숙사 점수에 들어가(안 보내면 0점). 최종 포인트는 «기숙사 포인트» 탭에서.</p></div>`;
 }
 function layerCardHTML(layerId) {
   const c = CARDS.find(x => x.layer === layerId); if (!c) return "";
