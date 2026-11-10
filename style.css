@@ -109,7 +109,7 @@ body{margin:0;background:var(--stone);color:var(--ink);font-family:var(--serif);
 .feedback{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:1rem;line-height:1.7}
 .feedback.ok{background:var(--ok-wash);border:1px solid #a9d5b6}
 .feedback.bad{background:var(--bad-wash);border:1px solid #efb3b3}
-.feedback b.lead{font-family:var(--sans)}
+.feedback b.lead{font-family:var(--sans);color:var(--ink)}
 .src{font:14px var(--sans);color:var(--muted);margin-top:6px}
 
 /* 보스 카드 */
@@ -264,3 +264,10 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 @media (min-width:768px) and (max-height:860px){ .cover-banner{aspect-ratio:3/1;} }
 @keyframes coverIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
 @media (prefers-reduced-motion: reduce){ .cover-banner{animation:none;} }
+
+/* 오답 핵심 단서 한 줄(2026-11-10, 벤치마크 3차) */
+.clue-line{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:var(--paper);border-left:4px solid var(--torch);font:16px/1.6 var(--sans)}
+.clue-line b{color:var(--torch-deep);margin-right:4px}
+.prev-cards{margin-top:16px}
+.who-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.who-line p{margin:0;font:600 1.05rem var(--sans)}

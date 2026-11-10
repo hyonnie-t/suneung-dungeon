@@ -11,7 +11,7 @@ const Logic = require("../logic.js");
 const ctx = { window: {} };
 vm.createContext(ctx);
 for (const f of ["data.js", "questions.js", "plan.js"]) vm.runInContext(fs.readFileSync(new URL("../" + f, import.meta.url), "utf8") + "\n;this.__x=1", ctx);
-const G = vm.runInContext("({ SESSIONS, BUNDLES, QUESTIONS, KEYS, HOUSES, TEST, bundlesForSession })", ctx);
+const G = vm.runInContext("({ SESSIONS, BUNDLES, QUESTIONS, KEYS, HOUSES, TEST, bundlesForSession, prevSessionsOf })", ctx);
 
 test("베팅 점수", () => {
   assert.equal(Logic.answerPts({ kind: "attack", pick: 2, conf: "sure", ok: true }), 3);
@@ -103,4 +103,16 @@ test("학생 화면 문자열에 검증 라벨·정답 힌트 예시 없음", ()
   for (const w of ["검수", "원문 대조", "대조 전", "미확인", "[2차]", "(2차)", "확인 전"]) assert.ok(!src.includes(w), "라벨 " + w);
   const ph = [...src.matchAll(/placeholder="([^"]*)"/g)].map(m => m[1]).join(" ");
   for (const b of G.BUNDLES) for (const c of b.clues) assert.ok(!ph.includes(c), "placeholder에 단서 " + c);
+});
+
+test("지난 차시 후보: 앞 층을 다룬 차시, 같은 묶음 먼저", () => {
+  const ids = id => Array.from(G.prevSessionsOf(G.SESSIONS.find(s => s.id === id)), s => s.id);
+  assert.deepEqual(ids("b1"), []);
+  assert.deepEqual(ids("L1"), []);
+  assert.deepEqual(ids("mock"), []);
+  assert.deepEqual(ids("b2"), ["b1", "L1"]);
+  assert.deepEqual(ids("b3"), ["b2", "L2"]);
+  assert.deepEqual(ids("b4"), ["b3", "L4"]);
+  assert.deepEqual(ids("b5"), ["b4", "L6"]);
+  assert.deepEqual(ids("L3"), ["L2", "b2"]);
 });

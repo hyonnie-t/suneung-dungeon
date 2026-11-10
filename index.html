@@ -12,7 +12,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="671">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="style.css?v=20261103v2-cover">
+<link rel="stylesheet" href="style.css?v=20261110v1">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 열쇠 글자 없이도 넘어갈 수 있어</div>
@@ -26,7 +26,11 @@
   </header>
 
   <figure class="cover-banner"><img src="cover.webp" width="1200" height="671" alt="" decoding="async"></figure>
-  <div class="card">
+  <div class="card who-line" id="whoLine" hidden>
+    <p>🙋 <b id="whoName"></b> 맞지?</p>
+    <button type="button" class="btn" id="whoEdit">아니야, 고칠래</button>
+  </div>
+  <div class="card" id="whoCard">
     <h2 class="h2">① 누구?</h2>
     <div class="row2">
       <label class="field"><span>학번</span><input id="sid" type="text" inputmode="numeric" maxlength="5" placeholder="5자리 숫자"></label>
@@ -104,8 +108,8 @@
 <script src="snippets/glossary.js?v=20261103v2"></script>
 <script src="data.js?v=20261103v2"></script>
 <script src="questions.js?v=20261103v2"></script>
-<script src="plan.js?v=20261103v2"></script>
+<script src="plan.js?v=20261110v1"></script>
 <script src="logic.js?v=20261103v2"></script>
-<script src="app.js?v=20261104v1"></script>
+<script src="app.js?v=20261110v1"></script>
 </body>
 </html>
