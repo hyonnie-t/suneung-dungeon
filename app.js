@@ -958,6 +958,11 @@ function init() {
   const sid = u.get("sid") || (S.preview ? "30599" : ""), name = u.get("name") || (S.preview ? "미리보기" : "");
   if (sid) $("sid").value = sid;
   if (name) $("sname").value = name;
+  if (parseSid(u.get("sid") || "") && (u.get("name") || "").trim()) {
+    $("whoCard").hidden = true; $("whoLine").hidden = false;
+    $("whoName").textContent = u.get("sid") + " " + u.get("name").trim();
+    $("whoEdit").addEventListener("click", () => { $("whoCard").hidden = false; $("whoLine").hidden = true; $("sid").focus(); });
+  }
   const s = u.get("s");
   if (s && sessionById(s)) { S.session = sessionById(s); $("sessionCard").hidden = true; }
   renderGate();

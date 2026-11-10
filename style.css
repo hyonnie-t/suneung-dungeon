@@ -269,3 +269,5 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 .clue-line{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:var(--paper);border-left:4px solid var(--torch);font:16px/1.6 var(--sans)}
 .clue-line b{color:var(--torch-deep);margin-right:4px}
 .prev-cards{margin-top:16px}
+.who-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.who-line p{margin:0;font:600 1.05rem var(--sans)}

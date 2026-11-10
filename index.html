@@ -26,7 +26,11 @@
   </header>
 
   <figure class="cover-banner"><img src="cover.webp" width="1200" height="671" alt="" decoding="async"></figure>
-  <div class="card">
+  <div class="card who-line" id="whoLine" hidden>
+    <p><b id="whoName"></b> 으로 들어가.</p>
+    <button type="button" class="btn" id="whoEdit">내가 아니야</button>
+  </div>
+  <div class="card" id="whoCard">
     <h2 class="h2">① 누구?</h2>
     <div class="row2">
       <label class="field"><span>학번</span><input id="sid" type="text" inputmode="numeric" maxlength="5" placeholder="5자리 숫자"></label>
