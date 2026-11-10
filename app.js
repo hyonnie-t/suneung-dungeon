@@ -332,8 +332,8 @@ function renderPlay() {
     const isDemo = st.kind === "demo";
     if (isDemo && S.run.cards.indexOf(st.bundle) < 0) { S.run.cards.push(st.bundle); saveRun(); renderHud(); }
     v.innerHTML = questionHTML(q, S.run.cur + 1, S.steps.length, { kind: st.kind }) +
-      `<div class="feedback ${a.ok ? "ok" : "bad"}"><b class="lead">${a.ok ? (isDemo ? "맞혔어!" : "정답! 보스에게 " + Logic.damage({ ...a, kind: "attack" }) + "만큼 피해.") : "아쉽다. 정답은 " + CIRCLE[q.ans - 1] + "."}</b>
-        <span class="pts-chip">${pts > 0 ? "+" : ""}${pts}점</span><br>${esc(q.exp)}</div>` +
+      `<div class="feedback ${a.ok ? "ok" : "bad"}"><b class="lead">${a.ok ? (isDemo ? "맞혔어!" : "정답! 보스에게 " + Logic.damage({ ...a, kind: "attack" }) + "만큼 피해.") : "아직 자라는 중이야 🌱 정답은 " + CIRCLE[q.ans - 1] + "."}</b>
+        <span class="pts-chip">${pts > 0 ? "+" : ""}${pts}점</span><br>${a.ok ? "" : "<b>왜?</b> "}${esc(q.exp)}${!a.ok && !isDemo ? `<p class="clue-line"><b>🔑 핵심 단서</b> ${esc(b.card.trap)}</p>` : ""}</div>` +
       (isDemo ? `<p class="eyebrow got">📖 도감에 개념 카드가 들어왔어</p>${conceptCardHTML(b)}` : "") +
       `<button class="btn-main" type="button" id="nextBtn" style="margin-top:12px">${S.run.pending >= S.steps.length ? "결과 보기" : "다음 문제"}</button>`;
     markChoices(v, q, a.pick);
