@@ -114,5 +114,16 @@ function bundlesForSession(s) {
   return out;
 }
 
+/* 지난 차시 후보(대기실 «지난 시간 도감» 복습용, 2026-11-10). 이 차시 첫 층의 바로 앞 층을 다룬 차시들,
+ * 같은 묶음(공통 ⓑ / 층 하나씩)부터. 모의고사·첫 층(L1)은 없음. 같은 태블릿 localStorage에서 이 순서로 찾는다. */
+function prevSessionsOf(s) {
+  if (!s || s.mockOnly) return [];
+  const i = LAYERS.findIndex(l => l.id === s.parts[0].layer);
+  if (i <= 0) return [];
+  const prev = LAYERS[i - 1].id;
+  const has = x => !x.mockOnly && x.id !== s.id && x.parts.some(p => p.layer === prev);
+  return SESSIONS.filter(x => has(x) && x.group === s.group).concat(SESSIONS.filter(x => has(x) && x.group !== s.group));
+}
+
 /* 열쇠 글자: 단계마다 교사 화면에 뜨는 두 글자. 학생이 넣어야 그 단계가 열린다(앞서가기 막기, 보안 아님). */
 const KEYS = ["탕평", "실학", "개항", "동학", "광무", "의병", "만세", "임정", "광복", "헌법", "직선", "규장", "선혜", "만상", "홍경", "북학", "별기", "우정", "집강", "독립", "지계", "국채", "태형", "회사", "산미", "의열", "신간", "형평", "한글", "정전", "유신", "민주", "새마"];

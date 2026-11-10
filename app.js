@@ -270,6 +270,22 @@ function goStep(j) {
   if (S.run.phase === "end") { finishRun(); return; }
   renderPlay();
 }
+/* 지난 차시 도감 카드(같은 태블릿에 남은 기록). 없으면 [] → 칸을 숨긴다. */
+function prevCards() {
+  for (const ps of prevSessionsOf(S.session)) {
+    const r = store.get("sd2:run:" + CONFIG.GAME_PREFIX + "_" + ps.gameId + ":" + S.sid);
+    const ids = r && Array.isArray(r.cards) ? r.cards.filter(id => bundleOf(id)) : [];
+    if (ids.length) return { s: ps, ids };
+  }
+  return null;
+}
+function prevCardsHTML() {
+  const pc = prevCards();
+  if (!pc) return "";
+  return `<div class="card prev-cards rise" id="prevCards"><h2 class="h2">📖 지난 시간 도감 다시 보기</h2>
+    <p class="hint">${esc(pc.s.title)}에서 모은 카드 ${pc.ids.length}장. 선생님이 시작하기 전에 «헷갈리면 이것만»부터 다시 읽어 봐.</p></div>` +
+    pc.ids.map(id => `<div class="rise">${conceptCardHTML(bundleOf(id))}</div>`).join("");
+}
 function renderPlay() {
   renderHud();
   const v = $("playView"), ph = S.run.phase;
@@ -280,7 +296,7 @@ function renderPlay() {
       <p class="eyebrow" style="color:var(--accent)">${esc(S.session.title)}</p><h2>대기실</h2>
       <p>오늘은 선생님이 <b>시범 문제</b>를 칠판에서 같이 풀며 개념을 설명하고, 바로 같은 개념의 <b>보스 공격 문제</b>를 네가 혼자 풀어.</p>
       <p>문제마다 <b>자신감</b>을 골라: 🔥 확신(+3/−1) · 🙂 아마도(+2) · 🎲 모르겠다(+1). 기숙사 점수는 기숙사원 <b>평균</b>이라 한 명 한 명이 다 중요해.</p>
-      <p class="hint">${h ? h.icon + " " + esc(h.name) + " 기숙사" : ""}</p></div>` + keyBoxHTML("선생님 칠판에 뜬 <b>열쇠 글자</b>를 넣으면 첫 문제가 열려.");
+      <p class="hint">${h ? h.icon + " " + esc(h.name) + " 기숙사" : ""}</p></div>` + keyBoxHTML("선생님 칠판에 뜬 <b>열쇠 글자</b>를 넣으면 첫 문제가 열려.") + prevCardsHTML();
     bindKey(); rise(v); return;
   }
   const st = S.steps[S.run.cur];
