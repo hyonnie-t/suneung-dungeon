@@ -445,8 +445,15 @@ function runText(sc, notes) {
 }
 async function postBody(body) {
   Object.assign(body, FocusGuard.payload());
-  const res = await fetch(CONFIG.SHEET_WEBAPP_URL, { method: "POST", body: JSON.stringify(body) });
-  const json = await res.json();
+  const ctl = new AbortController(); // 네트워크가 멈춰도 30초 뒤 «보내는 중»이 풀려 다시 누를 수 있게
+  const timer = setTimeout(() => ctl.abort(), 30000);
+  let json;
+  try {
+    const res = await fetch(CONFIG.SHEET_WEBAPP_URL, { method: "POST", body: JSON.stringify(body), signal: ctl.signal });
+    json = await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
   if (json.result !== "success") throw new Error(json.message || "저장 실패");
   return json;
 }
