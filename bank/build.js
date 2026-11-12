@@ -24,7 +24,7 @@ qs.forEach((q, i) => {
 if (errs.length) { console.error('문제 은행 검사 실패:\n' + errs.join('\n')); process.exit(1); }
 
 const header = `/* 수능 던전 문제 은행 — bank/questions.json에서 node bank/build.js로 만든 파일. 직접 고치지 말고 JSON을 고친다.
- * 출처: 평가원 수능·모의평가, 시도교육청 전국연합학력평가 한국사(교육 목적 교실 활용, 출처 표기, 공개 배포 금지). 문항 수 ${qs.length} (${new Date().toISOString().slice(0, 10)}) */\n`;
+ * 출처: 평가원 수능·모의평가, 시도교육청 전국연합학력평가 한국사(공개 자료, 출처 표기 유지). 문항 수 ${qs.length} (${new Date().toISOString().slice(0, 10)}) */\n`;
 fs.writeFileSync(out, header + 'const QUESTIONS = ' + JSON.stringify(qs, null, 1) + ';\n', 'utf8');
 const by = {};
 qs.forEach(q => { const k = q.mock ? 'M' : q.layer + (q.sub || ''); by[k] = (by[k] || 0) + 1; });
