@@ -1,2 +1,7 @@
 .impeccable/
 
+
+# 공통 틀(2026-11-12): 로컬 도구 설정·캐시는 올리지 않는다
+.claude/
+node_modules/
+.DS_Store
