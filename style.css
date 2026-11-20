@@ -271,3 +271,15 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 .prev-cards{margin-top:16px}
 .who-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .who-line p{margin:0;font:600 1.05rem var(--sans)}
+
+/* 그림(2026-11-20, 힉스필드): 보스·기숙사 문장·결과 배너·복도 배너. 그림을 못 불러오면 app.js가 원래 이모지로 바꾼다(.ico에서 .art가 빠짐).
+ * 보스는 폰에서 160px, 768px 이상 200px. 배너는 위 .cover-banner 관례를 그대로 쓴다(복도=성향 테스트 첫 문항, 보물 상자=결과 첫 카드). */
+.ico.art{display:block;line-height:0}
+.ico.art img{display:block;margin:0 auto;height:auto;border-radius:16px}
+.boss-card .boss-art{margin-bottom:8px}
+.boss-card .boss-art img{width:160px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+@media (min-width:768px){.boss-card .boss-art img{width:200px}}
+.house-reveal .ico.art{width:auto;height:auto;background:none;border-radius:0;margin-bottom:8px}
+.house-reveal .house-art img{width:144px;border-radius:50%}
+.house .house-art img{width:56px;border-radius:50%;margin-bottom:4px}
+.card > .victory-banner{margin:0 0 16px;max-width:none}

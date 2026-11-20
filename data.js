@@ -2,25 +2,25 @@
 
 // 층(시대). boss: 이름·아이콘·등장 대사·처치 대사. HP는 반 전체가 같이 깎는다(logic.js bossHp).
 const LAYERS = [
-  { id: "L1", name: "조선 후기의 정치 변동", short: "정치 변동", boss: { name: "세도 가문의 문중 어른", icon: "👑", line: "왕이 어리니 나라 일은 우리 집안이 맡지. 비변사는 우리 손 안이다.", defeat: "삼정의 문란까지 들통났군… 백성의 분노가 밀려온다." } },
-  { id: "L2", name: "농민 봉기·실학·서민 문화", short: "농민 봉기·실학", boss: { name: "탐관오리 수령", icon: "💰", line: "군포는 죽은 사람 몫도, 갓난아이 몫도 걷는다. 내 곳간은 늘 비어 있거든.", defeat: "홍경래와 진주의 농민들이… 실학자들의 글까지… 내 자리는 끝이다." } },
-  { id: "L3", name: "개항과 개화", short: "개항·개화", boss: { name: "척화비 수호자", icon: "⚓", line: "서양 오랑캐가 침범하는데 싸우지 않으면 화친하는 것이다! 문을 열지 마라.", defeat: "강화도 조약… 개화 정책… 시대의 파도는 막을 수 없었군." } },
-  { id: "L4", name: "동학·갑오개혁·대한 제국·국권 피탈", short: "동학·대한 제국", boss: { name: "통감 이토 히로부미", icon: "🎩", line: "을사년의 조약은 이미 맺어졌다. 외교권은 내가 가져가지.", defeat: "하얼빈… 안중근… 의병과 애국 계몽 운동이 이렇게 거셀 줄은." } },
-  { id: "L5", name: "일제 통치의 변화·3·1 운동·임시 정부", short: "일제 통치·3·1", boss: { name: "조선 총독부", icon: "🏛️", line: "헌병 경찰이 곳곳에 있다. 태형 한 대면 조용해질 것이다.", defeat: "탑골 공원에서 시작된 만세가 전국으로… 상하이에 정부가 세워졌다니." } },
-  { id: "L6", name: "무장 투쟁·민족 문화·사회 운동", short: "무장 투쟁·사회 운동", boss: { name: "일본군 토벌대장", icon: "🪖", line: "독립군 따위, 봉오동 골짜기에서 쓸어버리겠다.", defeat: "청산리에서… 윤봉길의 폭탄까지… 광복군이 국내 진입을 준비한다고?" } },
-  { id: "L7", name: "광복·분단·6·25·민주주의·경제", short: "현대", boss: { name: "독재의 그림자", icon: "🌑", line: "헌법쯤이야 사사오입으로, 유신으로 바꾸면 그만이다.", defeat: "4·19, 5·18, 6월 항쟁… 시민의 광장이 나를 걷어냈다." } }
+  { id: "L1", name: "조선 후기의 정치 변동", short: "정치 변동", boss: { name: "세도 가문의 문중 어른", icon: "👑", img: "img/boss-L1.webp", line: "왕이 어리니 나라 일은 우리 집안이 맡지. 비변사는 우리 손 안이다.", defeat: "삼정의 문란까지 들통났군… 백성의 분노가 밀려온다." } },
+  { id: "L2", name: "농민 봉기·실학·서민 문화", short: "농민 봉기·실학", boss: { name: "탐관오리 수령", icon: "💰", img: "img/boss-L2.webp", line: "군포는 죽은 사람 몫도, 갓난아이 몫도 걷는다. 내 곳간은 늘 비어 있거든.", defeat: "홍경래와 진주의 농민들이… 실학자들의 글까지… 내 자리는 끝이다." } },
+  { id: "L3", name: "개항과 개화", short: "개항·개화", boss: { name: "척화비 수호자", icon: "⚓", img: "img/boss-L3.webp", line: "서양 오랑캐가 침범하는데 싸우지 않으면 화친하는 것이다! 문을 열지 마라.", defeat: "강화도 조약… 개화 정책… 시대의 파도는 막을 수 없었군." } },
+  { id: "L4", name: "동학·갑오개혁·대한 제국·국권 피탈", short: "동학·대한 제국", boss: { name: "통감 이토 히로부미", icon: "🎩", img: "img/boss-L4.webp", line: "을사년의 조약은 이미 맺어졌다. 외교권은 내가 가져가지.", defeat: "하얼빈… 안중근… 의병과 애국 계몽 운동이 이렇게 거셀 줄은." } },
+  { id: "L5", name: "일제 통치의 변화·3·1 운동·임시 정부", short: "일제 통치·3·1", boss: { name: "조선 총독부", icon: "🏛️", img: "img/boss-L5.webp", line: "헌병 경찰이 곳곳에 있다. 태형 한 대면 조용해질 것이다.", defeat: "탑골 공원에서 시작된 만세가 전국으로… 상하이에 정부가 세워졌다니." } },
+  { id: "L6", name: "무장 투쟁·민족 문화·사회 운동", short: "무장 투쟁·사회 운동", boss: { name: "일본군 토벌대장", icon: "🪖", img: "img/boss-L6.webp", line: "독립군 따위, 봉오동 골짜기에서 쓸어버리겠다.", defeat: "청산리에서… 윤봉길의 폭탄까지… 광복군이 국내 진입을 준비한다고?" } },
+  { id: "L7", name: "광복·분단·6·25·민주주의·경제", short: "현대", boss: { name: "독재의 그림자", icon: "🌑", img: "img/boss-L7.webp", line: "헌법쯤이야 사사오입으로, 유신으로 바꾸면 그만이다.", defeat: "4·19, 5·18, 6월 항쟁… 시민의 광장이 나를 걷어냈다." } }
 ];
 
 // 기숙사 — 2판(2026-11-03)부터 반마다 학기말 성적이 고르게 나뉘게 백엔드가 배정한다(houseAssign)..
 // name은 백엔드 mode=house가 돌려주는 이름과 같아야 한다. persona는 «역사 성향 테스트» 결과 화면(테스트 답과 상관없이 배정된 기숙사로 나온다).
 const HOUSES = [
-  { id: "cheongryong", name: "청룡", icon: "🐉", color: "#2f6b8f",
+  { id: "cheongryong", name: "청룡", icon: "🐉", img: "img/house-cheongryong.webp", color: "#2f6b8f",
     persona: { type: "개혁가형", desc: "낡은 제도를 고쳐 새 길을 여는 사람. 규장각을 세운 정조, 토지 개혁을 꿈꾼 정약용과 같은 기운이야." } },
-  { id: "baekho", name: "백호", icon: "🐯", color: "#7b7f88",
+  { id: "baekho", name: "백호", icon: "🐯", img: "img/house-baekho.webp", color: "#7b7f88",
     persona: { type: "수호자형", desc: "공동체를 지키려 먼저 나서는 사람. 의병과 독립군, 3·1 운동의 학생들과 같은 기운이야." } },
-  { id: "jujak", name: "주작", icon: "🔥", color: "#b03a3a",
+  { id: "jujak", name: "주작", icon: "🔥", img: "img/house-jujak.webp", color: "#b03a3a",
     persona: { type: "개척자형", desc: "새 세상을 먼저 보고 문을 여는 사람. 청에 다녀와 『북학의』를 쓴 박제가, 개화파와 같은 기운이야." } },
-  { id: "hyeonmu", name: "현무", icon: "🐢", color: "#2f5d4f",
+  { id: "hyeonmu", name: "현무", icon: "🐢", img: "img/house-hyeonmu.webp", color: "#2f5d4f",
     persona: { type: "기록자형", desc: "기억하고 남기는 사람. 『한국통사』의 박은식, 『우리말 큰사전』을 지킨 조선어 학회와 같은 기운이야." } }
 ];
 

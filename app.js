@@ -154,9 +154,15 @@ function startHouseTest() {
   show("sHouse");
   renderTest();
 }
+// 그림(2026-11-20): 보스·기숙사 문장. 그림을 못 불러오면 그 자리에 원래 이모지가 나온다(onerror).
+function artIco(src, icon, alt, size, cls) {
+  return `<span class="ico art ${cls || ""}"><img src="${src}" alt="${esc(alt)}" width="${size}" height="${size}" decoding="async" data-fb="${esc(icon)}" onerror="this.parentNode.classList.remove('art');this.parentNode.textContent=this.dataset.fb"></span>`;
+}
+function bossArt(b) { return b.img ? artIco(b.img, b.icon, b.name, 512, "boss-art") : `<div class="ico">${b.icon}</div>`; }
+function houseArt(h) { return artIco(h.img, h.icon, h.name + " 기숙사 문장", 384, "house-art"); }
 function renderTest() {
   const v = $("houseView"), i = S.test.i, t = TEST[i];
-  v.innerHTML = `<header class="gate-head"><p class="eyebrow">기숙사 배정 · 역사 성향 테스트</p><h1 class="title" style="font-size:1.6rem">너는 어떤 역사 인물과 닮았을까?</h1></header>
+  v.innerHTML = `<header class="gate-head"><p class="eyebrow">기숙사 배정 · 역사 성향 테스트</p><h1 class="title" style="font-size:1.6rem">너는 어떤 역사 인물과 닮았을까?</h1></header>${i === 0 ? `<figure class="cover-banner corridor-banner"><img src="img/dungeon-corridor.webp" width="1280" height="720" alt="" decoding="async"></figure>` : ""}
     <div class="card rise"><p class="q-meta"><span>${i + 1} / ${TEST.length}</span></p><p class="q-stem">${esc(t.q)}</p>
     <div class="choices long">${t.opts.map((o, n) => `<button type="button" class="choice" data-n="${n}"><span class="num">${n + 1}</span><span>${esc(o)}</span></button>`).join("")}</div></div>`;
   v.querySelectorAll(".choice").forEach(b => b.addEventListener("click", () => {
@@ -173,7 +179,7 @@ async function revealHouse() {
   S.house = house; S.houseSource = "server";
   store.set("sd2:house:" + S.sid, { name: S.name, house, source: "server" });
   const h = houseByName(house);
-  v.innerHTML = `<div class="card house-reveal rise" style="--hcolor:${h.color}"><div class="ico">${h.icon}</div>
+  v.innerHTML = `<div class="card house-reveal rise" style="--hcolor:${h.color}">${h.img ? houseArt(h) : `<div class="ico">${h.icon}</div>`}
     <p class="eyebrow">너는</p><h2>${esc(h.persona.type)}!</h2>
     <p>${esc(h.persona.desc)}</p>
     <p class="house-name">${esc(h.name)} 기숙사가 너를 골랐어</p>
@@ -185,7 +191,7 @@ async function revealHouse() {
 function renderHousePick() {
   const v = $("houseView");
   v.innerHTML = `<div class="card"><h2 class="h2">기숙사를 아직 못 찾았어</h2><p>학번과 이름이 명단과 다르거나, 선생님이 아직 기숙사를 정하지 않았을 수 있어. <b>선생님께 내 기숙사를 물어보고</b> 골라 줘. 다음에 들어올 때 명단이 생겼으면 명단 기숙사로 바뀌어.</p>
-    <div class="house-grid">${HOUSES.map(h => `<button type="button" class="house" style="--hcolor:${h.color}" data-h="${esc(h.name)}"><span class="ico">${h.icon}</span>${esc(h.name)}</button>`).join("")}</div>
+    <div class="house-grid">${HOUSES.map(h => `<button type="button" class="house" style="--hcolor:${h.color}" data-h="${esc(h.name)}">${h.img ? houseArt(h) : `<span class="ico">${h.icon}</span>`}${esc(h.name)}</button>`).join("")}</div>
     <button class="btn" type="button" id="retryHouse">학번·이름 다시 쓰기</button></div>`;
   v.querySelectorAll(".house").forEach(b => b.addEventListener("click", () => {
     if (!confirm(`${b.dataset.h} 기숙사가 맞아? 선생님께 들은 대로 골라야 해.`)) return;
@@ -292,7 +298,7 @@ function renderPlay() {
   if (S.submitted || ph === "end") { finishRun(); return; }
   if (ph === "lobby") {
     const h = houseByName(S.house);
-    v.innerHTML = `<div class="card boss-card rise"><div class="ico">${layerOf(S.session.parts[0].layer).boss.icon}</div>
+    v.innerHTML = `<div class="card boss-card rise">${bossArt(layerOf(S.session.parts[0].layer).boss)}
       <p class="eyebrow" style="color:var(--accent)">${esc(S.session.title)}</p><h2>대기실</h2>
       <p>오늘은 선생님이 <b>시범 문제</b>를 칠판에서 같이 풀며 개념을 설명하고, 바로 같은 개념의 <b>보스 공격 문제</b>를 네가 혼자 풀어.</p>
       <p>문제마다 <b>자신감</b>을 골라: 🔥 확신(+3/−1) · 🙂 아마도(+2) · 🎲 모르겠다(+1). 기숙사 점수는 기숙사원 <b>평균</b>이라 한 명 한 명이 다 중요해.</p>
@@ -369,7 +375,7 @@ function finishRun() {
   const h = houseByName(S.house);
   const wrongs = list.filter(a => a.kind === "attack" && a.pick && !a.ok);
   const missed = list.filter(a => !a.pick).length;
-  $("endView").innerHTML = `<div class="card rise"><p class="eyebrow" style="color:var(--accent)">던전 결과 · ${h ? h.icon + " " + esc(h.name) : ""} 기숙사</p>
+  $("endView").innerHTML = `<div class="card rise"><figure class="cover-banner victory-banner"><img src="img/dungeon-victory.webp" width="1280" height="720" alt="" decoding="async"></figure><p class="eyebrow" style="color:var(--accent)">던전 결과 · ${h ? h.icon + " " + esc(h.name) : ""} 기숙사</p>
     <h2 class="h2" style="font-size:1.4rem">${esc(S.session.title)}</h2>
     <div class="sum-grid">
       <div class="stat"><b id="endPts">${sc.pts}</b><span>내 점수</span></div>
@@ -580,7 +586,7 @@ function gradeMock(timeout) {
   const score = m.results.filter(r => r.ok).reduce((s, r) => s + r.pts, 0);
   const t = mockTitle(correct, m.qids.length);
   show("sEnd");
-  $("endView").innerHTML = `<div class="card rise"><p class="eyebrow" style="color:var(--accent)">통합 모의고사 결과${timeout ? " · 시간 종료" : ""}</p>
+  $("endView").innerHTML = `<div class="card rise"><figure class="cover-banner victory-banner"><img src="img/dungeon-victory.webp" width="1280" height="720" alt="" decoding="async"></figure><p class="eyebrow" style="color:var(--accent)">통합 모의고사 결과${timeout ? " · 시간 종료" : ""}</p>
     <div style="text-align:center"><span class="title-badge">${esc(t.icon)} ${esc(t.name)}</span><p class="hint">${esc(t.desc)}</p></div>
     <div class="sum-grid">
       <div class="stat"><b>${correct}/${m.qids.length}</b><span>정답</span></div>
@@ -691,7 +697,7 @@ function renderLive() {
     </div>`;
   const body = $("liveBody");
   if (L.k < 0) {
-    body.innerHTML = `<div class="card boss-card"><div class="ico">${layerOf(layer).boss.icon}</div><h2>${esc(layerOf(layer).boss.name)}</h2><p>${esc(layerOf(layer).boss.line)}</p>
+    body.innerHTML = `<div class="card boss-card">${bossArt(layerOf(layer).boss)}<h2>${esc(layerOf(layer).boss.name)}</h2><p>${esc(layerOf(layer).boss.line)}</p>
       <p class="big-key">열쇠 글자 <b>${esc(keyFor(sIdx, 0))}</b></p><p>학생: 학번·이름 → (처음이면 성향 테스트) → 대기실에서 위 글자를 넣으면 첫 문제가 열린다.</p></div>` + (L.layerCard ? layerCardHTML(layer) : "");
   } else if (L.k >= steps.length) {
     body.innerHTML = liveEndHTML(s, steps, sIdx) + (L.layerCard ? layerCardHTML(layer) : "");
