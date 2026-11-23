@@ -1006,7 +1006,13 @@ function renderBank() {
       ${bs.map(b => `<h3 class="bank-b">${esc(b.title)} ${b.core ? "<span class='tag'>통합 차시에도</span>" : ""}</h3><p class="src">단서: ${b.clues.map(esc).join(" · ")}</p>
         <table class="tbl"><tbody>${row(qById(b.demo), "시범")}${b.attacks.map((id, i) => row(qById(id), "공격" + (i + 1))).join("")}</tbody></table>`).join("")}
       ${rest.length ? `<h3 class="bank-b">묶음 밖(예비)</h3><table class="tbl"><tbody>${rest.map(q => row(q, "예비")).join("")}</tbody></table>` : ""}</div>`;
-  }).join("") + `<div class="card layer-M"><h2 class="h2">통합 모의고사</h2><table class="tbl"><tbody>${QUESTIONS.filter(q => q.mock).map(q => row(q, "모의")).join("")}</tbody></table></div>`;
+  }).join("") + (() => {
+    // 모의고사에 실제로 나오는 문항을 먼저(15문항·20문항 표시), 안 나오는 것은 «모의 예비»로 뒤에
+    const in15 = new Set(mockQuestions(15)), in20 = mockQuestions(20), s20 = new Set(in20);
+    const role = q => (in15.has(q.id) ? "모의 15·20" : s20.has(q.id) ? "모의 20" : "모의 예비") + (q.fresh ? " 🔥" : "");
+    const used = in20.map(qById), spare = QUESTIONS.filter(q => q.mock && !s20.has(q.id));
+    return `<div class="card layer-M"><h2 class="h2">통합 모의고사</h2><p class="hint">올해 수능(🔥)과 예전 기출 반반. 15문항 = 올해 8 + 예전 7, 20문항 = 올해 10 + 예전 10.</p><table class="tbl"><tbody>${used.concat(spare).map(q => row(q, role(q))).join("")}</tbody></table></div>`;
+  })();
 }
 
 /* ───────── 시작 ───────── */
