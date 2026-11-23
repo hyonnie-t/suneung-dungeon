@@ -62,11 +62,22 @@ function stepsOf(s) { return Logic.steps(bundlesForSession(s)); }
 // 열쇠 글자: 차시마다 시작 위치를 달리해 지난 차시 글자로는 안 열리게
 function keyFor(sessIdx, k) { return KEYS[(sessIdx * 7 + k) % KEYS.length]; }
 const normKey = s => String(s || "").replace(/\s+/g, "");
-// 모의고사: 올해 수능(fresh) 문항을 먼저 고르고, 모자라면 예전 모의 문항을 붙인다. 고른 문항은 층(시대) 순서로(2026-11-23)
+// 모의고사: 올해 수능(fresh)과 예전 기출을 반반(효니 결정 2026-11-23 «반반 섞기», 올해 수능 3점이 중3에게 어려워서).
+// 올해 수능은 절반(올림)을 2점 먼저·시험 번호 순으로, 예전 기출은 지금 문항이 가장 적은 층부터 하나씩 채운다(시대 고르게). 고른 문항은 층(시대) 순서로.
 function mockQuestions(n) {
   const pool = QUESTIONS.filter(q => q.mock);
-  const pick = pool.filter(q => q.fresh).concat(pool.filter(q => !q.fresh)).slice(0, n);
+  const fresh = pool.filter(q => q.fresh), old = pool.filter(q => !q.fresh);
+  const nf = Math.min(fresh.length, Math.ceil(n / 2)), no = Math.min(old.length, n - nf);
+  const f = fresh.map((q, i) => ({ q, i })).sort((a, b) => a.q.pts - b.q.pts || a.i - b.i).slice(0, nf).sort((a, b) => a.i - b.i).map(x => x.q);
   const li = id => LAYERS.findIndex(l => l.id === id);
+  const cnt = LAYERS.map(L => f.filter(q => q.layer === L.id).length), left = old.slice(), o = [];
+  while (o.length < no && left.length) {
+    const has = LAYERS.map((L, i) => left.some(q => q.layer === L.id) ? i : -1).filter(i => i >= 0);
+    const i = has.reduce((a, b) => (cnt[b] < cnt[a] ? b : a));
+    const k = left.findIndex(q => q.layer === LAYERS[i].id);
+    o.push(left.splice(k, 1)[0]); cnt[i]++;
+  }
+  const pick = f.concat(o);
   return pick.map((q, i) => ({ q, i })).sort((a, b) => li(a.q.layer) - li(b.q.layer) || a.i - b.i).map(x => x.q.id);
 }
 
