@@ -15,7 +15,7 @@
 - `data.js` — 층(LAYERS)·기숙사(HOUSES, persona)·성향 테스트(TEST)·차시(SESSIONS)·층 정리 카드(CARDS)·칭호(TITLES)·어휘(GLOSSARY)
 - `plan.js` — 개념 묶음 `BUNDLES`(demo·attacks·clues·core·card)와 `bundlesForSession`, 열쇠 글자 `KEYS`
 - `logic.js` — 점수 규칙(DOM 없음): 베팅(확신 +3/−1·아마도 +2·모르겠다 +1, 시범 참여 +1, «왜 틀렸나» 한 줄 +1), 보스 HP·피해, 순위 포인트, 기숙사 결산. `node tests/logic.test.mjs`
-- `questions.js` — 문제 은행(87문항). 원본은 `bank/questions.json`, `node bank/build.js`가 다시 만든다. 출처 표 `bank/sources.md`
+- `questions.js` — 문제 은행(102문항). 원본은 `bank/questions.json`, `node bank/build.js`가 다시 만든다. 출처 표 `bank/sources.md`
 - `app.js` — 학생 흐름 + 교사 화면(수업 진행 / 기숙사 배정 / 기숙사 포인트 / 문제 은행)
 - `snippets/` — history26 `focus_guard.js`·`draft_guard.js`·`glossary.js` 복사본
 
@@ -38,4 +38,13 @@
 - 예시·placeholder에 정답 힌트 금지. 태블릿 기본(폭 3단계). 움직임: Sticky(HUD·교사 상단·조작줄), Scroll-triggered(카드 목록), 성향 결과 대기 회전, 막대 너비 전환. `prefers-reduced-motion`이면 끈다.
 - 푸시는 작업 브랜치 → PR → 검증 뒤 `main` 병합·배포 확인까지 Claude가 한다. 수정·배포 뒤 배포 주소를 내장 브라우저로 직접 연다.
 - 결과 제출(2026-11-10): 던전 결과·통합 모의고사 결과 모두 «제출하고 복사하기» 한 버튼(복사 먼저 시작, 3초 제한) → 성공 뒤 «우리 반 패들렛 열기»·«다시 복사». 복사 글(`runText`·모의고사 한 줄)은 `S.outText`(메모리)에만 둔다. 패들렛 링크는 `?mode=curriculum`의 `portfolio.urlByBan`(없으면 안내만).
+- 올해 수능(2026-11-23, 효니 쪽지 «올해 수능 문제가 제일 따끈따끈하니 포함»): 2027학년도 수능 6~20번(조선 후기~현대 15문항)을 `S27-06`~`S27-20`, `mock: true`, `fresh: "2027"`로 넣었다. 모의고사는 올해 수능과 예전 기출 반반(효니 답 2026-11-23 «반반 섞기», 3점 문항이 중3에게 어려워서): `mockQuestions`가 올해 수능을 절반(올림)만 2점 먼저 고르고 나머지는 예전 모의 문항에서 문항이 적은 층부터 하나씩 → 15문항 = 올해 8 + 예전 7, 20문항 = 올해 10 + 예전 10, 층 순서. 화면엔 «🔥 올해 수능» 표시. 원문은 EBSi 2027 수능 한국사 홀수형 문제지, 정답은 해설지 정답표. 내년에 새 수능을 넣을 땐 지난 `fresh`를 지우고 새 문항에 단다.
 - 기숙사 이름·색(`HOUSES`)은 백엔드 `HOUSE_NAMES`(청룡·백호·주작·현무)와 같아야 한다.
+
+## 연결 점검표
+- 2026-11-23 올해 수능 반반 모의고사(`mockQuestions`, `fresh`):
+  - 학생 모의고사 풀이·채점(`gradeMock`): 고른 id로만 돈다, 15·20문항 중복 없음 확인.
+  - 제출(`choicesJson` answers·total)·복사 글·패들렛: 문항 수만 쓰고 바뀐 것 없음.
+  - 교사 통계(많이 틀린 문항): `qById`로 찾으니 새 id(S27-)도 보인다.
+  - 교사 문제 은행: 모의고사에 실제로 나오는 문항을 «모의 15·20 / 모의 20 / 모의 예비»로 표시(고침).
+  - 층별 수업(시범·공격)·기숙사 포인트·백엔드: `mock` 문항을 쓰지 않아 영향 없음. localStorage 키 안 바꿈.

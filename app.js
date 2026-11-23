@@ -62,7 +62,24 @@ function stepsOf(s) { return Logic.steps(bundlesForSession(s)); }
 // 열쇠 글자: 차시마다 시작 위치를 달리해 지난 차시 글자로는 안 열리게
 function keyFor(sessIdx, k) { return KEYS[(sessIdx * 7 + k) % KEYS.length]; }
 const normKey = s => String(s || "").replace(/\s+/g, "");
-function mockQuestions(n) { return QUESTIONS.filter(q => q.mock).slice(0, n).map(q => q.id); }
+// 모의고사: 올해 수능(fresh)과 예전 기출을 반반(효니 결정 2026-11-23 «반반 섞기», 올해 수능 3점이 중3에게 어려워서).
+// 올해 수능은 절반(올림)을 2점 먼저·시험 번호 순으로, 예전 기출은 지금 문항이 가장 적은 층부터 하나씩 채운다(시대 고르게). 고른 문항은 층(시대) 순서로.
+function mockQuestions(n) {
+  const pool = QUESTIONS.filter(q => q.mock);
+  const fresh = pool.filter(q => q.fresh), old = pool.filter(q => !q.fresh);
+  const nf = Math.min(fresh.length, Math.ceil(n / 2)), no = Math.min(old.length, n - nf);
+  const f = fresh.map((q, i) => ({ q, i })).sort((a, b) => a.q.pts - b.q.pts || a.i - b.i).slice(0, nf).sort((a, b) => a.i - b.i).map(x => x.q);
+  const li = id => LAYERS.findIndex(l => l.id === id);
+  const cnt = LAYERS.map(L => f.filter(q => q.layer === L.id).length), left = old.slice(), o = [];
+  while (o.length < no && left.length) {
+    const has = LAYERS.map((L, i) => left.some(q => q.layer === L.id) ? i : -1).filter(i => i >= 0);
+    const i = has.reduce((a, b) => (cnt[b] < cnt[a] ? b : a));
+    const k = left.findIndex(q => q.layer === LAYERS[i].id);
+    o.push(left.splice(k, 1)[0]); cnt[i]++;
+  }
+  const pick = f.concat(o);
+  return pick.map((q, i) => ({ q, i })).sort((a, b) => li(a.q.layer) - li(b.q.layer) || a.i - b.i).map(x => x.q.id);
+}
 
 /* ───────── 문항 그리기(학생·교사 공용) ───────── */
 // opt.clues: 형광펜 칠할 단서 / opt.big: 교사 화면 / opt.kind: 'demo'|'attack'
@@ -80,6 +97,7 @@ function questionHTML(q, n, total, opt) {
   const kindTag = opt.kind === "demo" ? `<span class="tag demo">시범 문제 · 찍어도 괜찮아</span>` : opt.kind === "attack" ? `<span class="tag atk">⚔️ 보스 공격</span>` : `<span class="tag">${esc(q.type)}</span>`;
   return `<div class="card q-card ${opt.big ? "big" : ""}">
     <div class="q-meta"><span>${kindTag} <span class="tag pts">${esc(q.type)}</span></span><span>${n} / ${total} · ${esc(L.short)}</span></div>
+    ${q.fresh ? `<p class="q-fresh"><span class="tag fresh">🔥 올해 수능</span> 고3 선배들이 ${q.fresh === "2027" ? "2026년 11월 19일에" : "올해"} 실제로 푼 문제야</p>` : ""}
     <p class="q-stem">${esc(q.q)}</p>${box}${note}${self}${bogi}
     <div class="choices ${long ? "long" : ""}">${q.ch.map((c, i) => `<button type="button" class="choice" data-n="${i + 1}"><span class="num">${i + 1}</span><span>${esc(c)}</span></button>`).join("")}</div>
     <p class="src">출처: ${esc(q.src)}</p>
@@ -988,7 +1006,13 @@ function renderBank() {
       ${bs.map(b => `<h3 class="bank-b">${esc(b.title)} ${b.core ? "<span class='tag'>통합 차시에도</span>" : ""}</h3><p class="src">단서: ${b.clues.map(esc).join(" · ")}</p>
         <table class="tbl"><tbody>${row(qById(b.demo), "시범")}${b.attacks.map((id, i) => row(qById(id), "공격" + (i + 1))).join("")}</tbody></table>`).join("")}
       ${rest.length ? `<h3 class="bank-b">묶음 밖(예비)</h3><table class="tbl"><tbody>${rest.map(q => row(q, "예비")).join("")}</tbody></table>` : ""}</div>`;
-  }).join("") + `<div class="card layer-M"><h2 class="h2">통합 모의고사</h2><table class="tbl"><tbody>${QUESTIONS.filter(q => q.mock).map(q => row(q, "모의")).join("")}</tbody></table></div>`;
+  }).join("") + (() => {
+    // 모의고사에 실제로 나오는 문항을 먼저(15문항·20문항 표시), 안 나오는 것은 «모의 예비»로 뒤에
+    const in15 = new Set(mockQuestions(15)), in20 = mockQuestions(20), s20 = new Set(in20);
+    const role = q => (in15.has(q.id) ? "모의 15·20" : s20.has(q.id) ? "모의 20" : "모의 예비") + (q.fresh ? " 🔥" : "");
+    const used = in20.map(qById), spare = QUESTIONS.filter(q => q.mock && !s20.has(q.id));
+    return `<div class="card layer-M"><h2 class="h2">통합 모의고사</h2><p class="hint">올해 수능(🔥)과 예전 기출 반반. 15문항 = 올해 8 + 예전 7, 20문항 = 올해 10 + 예전 10.</p><table class="tbl"><tbody>${used.concat(spare).map(q => row(q, role(q))).join("")}</tbody></table></div>`;
+  })();
 }
 
 /* ───────── 시작 ───────── */
