@@ -169,6 +169,8 @@ body{margin:0;background:var(--stone);color:var(--ink);font-family:var(--serif);
 .hud-stats{display:flex;gap:14px;justify-content:space-between;margin-top:6px;font-size:15px;color:#d9d2c4;flex-wrap:wrap}
 .hud-stats b{color:var(--torch);font-variant-numeric:tabular-nums}
 .tag.demo{border-color:var(--ok);color:var(--ok);background:var(--ok-wash)}
+.tag.fresh{border-color:var(--torch-deep);color:var(--paper);background:var(--torch-deep)}
+.q-fresh{margin:8px 0 0;font:600 14px var(--sans);color:var(--torch-deep)}
 .tag.atk{border-color:var(--bad);color:var(--bad);background:var(--bad-wash)}
 .conf-row{display:grid;gap:8px;grid-template-columns:repeat(3,1fr);margin:6px 0 12px}
 .conf{padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;text-align:center;font-family:var(--sans);word-break:keep-all}

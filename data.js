@@ -39,7 +39,7 @@ const SESSIONS = [
   { id: "b2", gameId: "b2", group: "common", title: "ⓑ2 농민 봉기·사회경제·실학", desc: "농민 봉기 → 신분제·시장 → 실학·서민 문화 (묶음 3개)", parts: [{ layer: "L2" }] },
   { id: "b3", gameId: "b3", group: "common", title: "ⓑ3 개항·개화 + 동학·국권 피탈", desc: "두 층 · 묶음 4개", parts: [{ layer: "L3" }, { layer: "L4" }] },
   { id: "b4", gameId: "b4", group: "common", title: "ⓑ4 일제 통치·3·1 + 무장 투쟁·사회 운동", desc: "두 층 · 묶음 4개", parts: [{ layer: "L5" }, { layer: "L6" }] },
-  { id: "b5", gameId: "b5", group: "common", title: "ⓑ5 현대 + 통합 모의고사", desc: "현대 묶음 2개 → 개인 모의고사 15문항(20분)", parts: [{ layer: "L7" }], short: true, mockCount: 15 },
+  { id: "b5", gameId: "b5", group: "common", title: "ⓑ5 현대 + 통합 모의고사", desc: "현대 묶음 2개 → 개인 모의고사 15문항(20분, 올해 2027학년도 수능 실제 문항)", parts: [{ layer: "L7" }], short: true, mockCount: 15 },
   { id: "L1", gameId: "L1", group: "split", title: "L1 조선 후기의 정치 변동", desc: "층 하나 · 묶음 3개", parts: [{ layer: "L1" }] },
   { id: "L2", gameId: "L2", group: "split", title: "L2 농민 봉기·실학·서민 문화", desc: "층 하나 · 묶음 3개", parts: [{ layer: "L2" }] },
   { id: "L3", gameId: "L3", group: "split", title: "L3 개항·개화", desc: "유연 +1 · 묶음 3개", parts: [{ layer: "L3" }] },
@@ -47,7 +47,7 @@ const SESSIONS = [
   { id: "L5", gameId: "L5", group: "split", title: "L5 일제 통치·3·1·임정", desc: "유연 +2 · 묶음 3개", parts: [{ layer: "L5" }] },
   { id: "L6", gameId: "L6", group: "split", title: "L6 무장 투쟁·민족 문화·사회 운동", desc: "유연 +2 · 묶음 3개", parts: [{ layer: "L6" }] },
   { id: "L7", gameId: "L7", group: "split", title: "L7 현대", desc: "층 하나 · 묶음 3개", parts: [{ layer: "L7" }] },
-  { id: "mock", gameId: "모의고사", group: "split", title: "통합 모의고사 20문항", desc: "유연 반 한 차시 · 개인전 25분", mockOnly: true, mockCount: 20 }
+  { id: "mock", gameId: "모의고사", group: "split", title: "통합 모의고사 20문항", desc: "유연 반 한 차시 · 개인전 25분 · 올해 수능 15 + 예전 기출 5", mockOnly: true, mockCount: 20 }
 ];
 
 // 던전 클리어 칭호(정답률 기준, 위에서부터 검사)

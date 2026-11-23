@@ -62,7 +62,13 @@ function stepsOf(s) { return Logic.steps(bundlesForSession(s)); }
 // 열쇠 글자: 차시마다 시작 위치를 달리해 지난 차시 글자로는 안 열리게
 function keyFor(sessIdx, k) { return KEYS[(sessIdx * 7 + k) % KEYS.length]; }
 const normKey = s => String(s || "").replace(/\s+/g, "");
-function mockQuestions(n) { return QUESTIONS.filter(q => q.mock).slice(0, n).map(q => q.id); }
+// 모의고사: 올해 수능(fresh) 문항을 먼저 고르고, 모자라면 예전 모의 문항을 붙인다. 고른 문항은 층(시대) 순서로(2026-11-23)
+function mockQuestions(n) {
+  const pool = QUESTIONS.filter(q => q.mock);
+  const pick = pool.filter(q => q.fresh).concat(pool.filter(q => !q.fresh)).slice(0, n);
+  const li = id => LAYERS.findIndex(l => l.id === id);
+  return pick.map((q, i) => ({ q, i })).sort((a, b) => li(a.q.layer) - li(b.q.layer) || a.i - b.i).map(x => x.q.id);
+}
 
 /* ───────── 문항 그리기(학생·교사 공용) ───────── */
 // opt.clues: 형광펜 칠할 단서 / opt.big: 교사 화면 / opt.kind: 'demo'|'attack'
@@ -80,6 +86,7 @@ function questionHTML(q, n, total, opt) {
   const kindTag = opt.kind === "demo" ? `<span class="tag demo">시범 문제 · 찍어도 괜찮아</span>` : opt.kind === "attack" ? `<span class="tag atk">⚔️ 보스 공격</span>` : `<span class="tag">${esc(q.type)}</span>`;
   return `<div class="card q-card ${opt.big ? "big" : ""}">
     <div class="q-meta"><span>${kindTag} <span class="tag pts">${esc(q.type)}</span></span><span>${n} / ${total} · ${esc(L.short)}</span></div>
+    ${q.fresh ? `<p class="q-fresh"><span class="tag fresh">🔥 올해 수능</span> 고3 선배들이 ${q.fresh === "2027" ? "2026년 11월 19일에" : "올해"} 실제로 푼 문제야</p>` : ""}
     <p class="q-stem">${esc(q.q)}</p>${box}${note}${self}${bogi}
     <div class="choices ${long ? "long" : ""}">${q.ch.map((c, i) => `<button type="button" class="choice" data-n="${i + 1}"><span class="num">${i + 1}</span><span>${esc(c)}</span></button>`).join("")}</div>
     <p class="src">출처: ${esc(q.src)}</p>
