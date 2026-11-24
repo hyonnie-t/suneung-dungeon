@@ -278,6 +278,8 @@ function openStep(j) {
   const prev = S.run.cur;
   S.run.pending = j;
   const answeredPrev = prev >= 0 && prev < S.steps.length && S.run.answers[S.steps[prev].qid];
+  // 2026-11-25 자동 저장: 묶음이 끝나거나 마지막 문제를 넘기면 지금까지 결과를 조용히 보낸다(«결과 보내기» 안 눌러도 마감 가능)
+  if (prev >= 0 && prev < S.steps.length && (j >= S.steps.length || (S.steps[j] || {}).bundle !== S.steps[prev].bundle)) autoSave();
   if (answeredPrev) { S.run.phase = "result"; }
   else { goStep(j); return; }
   saveRun(); renderPlay();
@@ -387,6 +389,7 @@ async function sendPick(qid, pick, conf) {
 /* 마무리 → 제출 (ⓑ5는 제출 뒤 모의고사로 이어진다) */
 function finishRun() {
   clearInterval(S.timer);
+  autoSave();
   show("sEnd");
   const sc = myScore();
   const list = answersList();
@@ -402,7 +405,7 @@ function finishRun() {
       <div class="stat"><b>${S.run.cards.length}</b><span>도감 개념 카드</span></div>
     </div>
     ${missed ? `<p class="hint">놓친 문제 ${missed}개는 0점이야.</p>` : ""}
-    <p class="hint">내 점수는 기숙사 <b>평균</b>에 들어가. 보내지 않으면 0점으로 계산돼.</p></div>
+    <p class="hint">내 점수는 기숙사 <b>평균</b>에 들어가. 지금까지 결과는 자동으로 저장됐어. «왜 틀렸나»를 쓰고 보내면 +1점씩 더해져.</p></div>
     ${wrongs.length ? `<div class="card rise"><h2 class="h2">틀린 보스 공격 문제 — «왜 틀렸나» 한 줄 (하나에 +1, ${Logic.NOTE_MIN}자 이상)</h2>
       ${wrongs.map((a, i) => { const q = qById(a.id); return `<div class="wrong-item"><p class="st">${esc(q.q)}</p><p class="ex">내 답 ${CIRCLE[a.pick - 1]} · 정답 ${CIRCLE[q.ans - 1]} ${esc(q.ch[q.ans - 1])}<br>${esc(q.exp)}</p>
         <label class="field note-box"><span>왜 헷갈렸는지 한 줄</span><textarea name="why_${i}" data-q="${esc(a.id)}" placeholder="떠오르는 대로 한 줄">${esc(S.run.notes[a.id] || "")}</textarea></label></div>`; }).join("")}</div>` : ""}
@@ -511,8 +514,8 @@ async function postBody(body) {
   if (json.result !== "success") throw new Error(json.message || "저장 실패");
   return json;
 }
-async function submitRun() {
-  if (S.sending || S.submitted) return;
+/* 제출 본문(손으로 보내기·자동 저장 같이 쓴다). 자동 저장 행은 choicesJson.auto = true. 교사 «기숙사 포인트»는 학생마다 마지막 행을 쓴다. */
+function runBody(auto) {
   const sc = myScore(), list = answersList();
   const notes = Object.entries(S.run.notes).filter(([, t]) => String(t).trim()).map(([id, text]) => ({ id, text: String(text).trim() }));
   const body = {
@@ -520,8 +523,22 @@ async function submitRun() {
     choiceSummary: `${S.house} · ${S.session.title} · ${sc.pts}점 · 공격 ${sc.attackOk}/${sc.attackN} · 피해 ${sc.dmg} · 카드 ${S.run.cards.length}`,
     reflection: notes.map(n => `[${n.id}] ${n.text}`).join("\n"),
     choicesJson: JSON.stringify({ v: 2, house: S.house, houseSource: S.houseSource, session: S.session.id, pts: sc.pts, dmg: sc.dmg, attackN: sc.attackN, attackOk: sc.attackOk, noteN: sc.noteN,
-      answers: list.map(a => ({ id: a.id, kind: a.kind, type: (qById(a.id) || {}).type, pick: a.pick || 0, conf: a.conf || "", ok: !!a.ok })), notes, cards: S.run.cards })
+      answers: list.map(a => ({ id: a.id, kind: a.kind, type: (qById(a.id) || {}).type, pick: a.pick || 0, conf: a.conf || "", ok: !!a.ok })), notes, cards: S.run.cards, auto: !!auto })
   };
+  return { body, sc, notes };
+}
+/* 자동 저장: 답한 수가 지난 자동 저장보다 늘었을 때만. 실패해도 수업은 그대로(마지막에 손으로 보내면 된다). */
+function autoSave() {
+  if (S.preview || S.submitted || !S.run) return;
+  const n = Object.keys(S.run.answers || {}).length;
+  if (!n || n <= (S.run.savedN || 0)) return;
+  const { body } = runBody(true);
+  S.autoP = postBody(body).then(() => { S.run.savedN = n; saveRun(); }).catch(() => {}).finally(() => { S.autoP = null; });
+}
+async function submitRun() {
+  if (S.sending || S.submitted) return;
+  if (S.autoP) { try { await S.autoP; } catch (e) { /* 무시 */ } } // 자동 저장이 손 제출보다 늦게 도착해 «왜 틀렸나»를 덮지 않게
+  const { body, sc, notes } = runBody(false);
   const out = runText(sc, notes);
   const copyP = copyFirst(out);
   if (S.preview) { toast("미리보기라 저장하지 않았어"); S.submitted = true; S.outText = out; afterSubmit(); return; }
@@ -837,7 +854,7 @@ function liveEndHTML(s, steps, sIdx) {
     <h3 class="h2" style="margin-top:12px">오늘 기숙사(수업 중 어림값)</h3>
     <ol class="rank">${order.map(x => `<li style="--hcolor:${x.h.color}">${x.h.icon} ${esc(x.h.name)} <b>${x.a.toFixed(1)}</b></li>`).join("") || "<li>분포 기록이 없어</li>"}</ol>
     <p class="big-key">학생 결과 화면 열쇠 <b>${esc(keyFor(sIdx, steps.length))}</b></p>
-    <p>학생은 이 글자를 넣고 «제출하고 복사하기»까지 눌러야 기숙사 점수에 들어가(안 보내면 0점). 최종 포인트는 «기숙사 포인트» 탭에서.</p></div>`;
+    <p>학생 결과는 묶음이 끝날 때마다 자동 저장돼서, 안 보낸 학생도 거기까지 푼 점수로 들어가(한 문제도 안 푼 학생만 0점). «왜 틀렸나» 점수는 «제출하고 복사하기»를 눌러야 들어가. 최종 포인트는 «기숙사 포인트» 탭에서.</p></div>`;
 }
 function layerCardHTML(layerId) {
   const c = CARDS.find(x => x.layer === layerId); if (!c) return "";
@@ -936,7 +953,10 @@ function renderPoints() {
       if (r.gameName !== game || String(r.studentId || "").slice(0, 3) !== gb) return;
       let j; try { j = JSON.parse(r.choicesJson || "{}"); } catch (e) { return; }
       if (j.v !== 2) return;
-      subs[String(r.studentId)] = { pts: j.pts || 0, dmg: j.dmg || 0, attackN: j.attackN || 0, attackOk: j.attackOk || 0 };
+      // 2026-11-25 자동 저장으로 한 학생이 여러 행 → 가장 늦은 행(시각이 같거나 없으면 뒤에 온 행)을 쓴다
+      const t = Date.parse(r.timestamp) || 0, sid = String(r.studentId), old = subs[sid];
+      if (old && t < old.t) return;
+      subs[sid] = { t, pts: j.pts || 0, dmg: j.dmg || 0, attackN: j.attackN || 0, attackOk: j.attackOk || 0 };
     });
     if (!Object.keys(subs).length) return;
     const key = gb + ":" + s.id;
@@ -968,9 +988,13 @@ function renderPoints() {
   });
 }
 function worstHTML(gb) {
-  const byQ = {};
-  T.rows.forEach(r => {
+  const byQ = {}, last = {};
+  T.rows.forEach(r => { // 2026-11-25 자동 저장 행이 겹치므로 학생·차시마다 가장 늦은 행만
     if (!String(r.gameName || "").startsWith(CONFIG.GAME_PREFIX + "_") || String(r.studentId || "").slice(0, 3) !== gb) return;
+    const k = r.studentId + "|" + r.gameName, t = Date.parse(r.timestamp) || 0;
+    if (!last[k] || t >= last[k].t) last[k] = { t, r };
+  });
+  Object.values(last).forEach(({ r }) => {
     let j; try { j = JSON.parse(r.choicesJson || "{}"); } catch (e) { return; }
     (j.answers || []).forEach(a => { if (!a.pick) return; byQ[a.id] = byQ[a.id] || { n: 0, ok: 0, sureBad: 0 }; byQ[a.id].n++; if (a.ok) byQ[a.id].ok++; else if (a.conf === "sure") byQ[a.id].sureBad++; });
   });
