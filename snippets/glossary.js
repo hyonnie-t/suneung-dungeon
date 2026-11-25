@@ -20,7 +20,7 @@
 (function () {
   var terms = {};
   var re = null;
-  var cfg = { root: null, tag: 'button', sheet: true, style: true, skip: [], unique: false };
+  var cfg = { root: null, tag: 'button', sheet: true, style: true, skip: [], unique: false, except: {} };
   var skipSel = '';
   var observer = null;
   var scheduled = false;
@@ -37,6 +37,21 @@
     var keys = Object.keys(terms).filter(function (k) { return k; });
     keys.sort(function (a, b) { return b.length - a.length; });
     re = keys.length ? new RegExp(keys.map(escapeReg).join('|'), 'g') : null;
+  }
+
+  /* except 옵션(수능 던전 2026-11-25, history26 원본에는 없음): { 낱말: [그 낱말을 품은 다른 말, …] }.
+   * 2글자 넘는 낱말은 긴 말 속에서도 걸려 «민주화»에 «주화(동전)» 풀이가 붙었다. 적어 둔 말 안에서 걸린 것만 건너뛴다. */
+  function inExcept(text, key, i) {
+    var list = cfg.except[key];
+    if (!list) return false;
+    for (var k = 0; k < list.length; k++) {
+      var w = list[k], p = text.indexOf(w);
+      while (p >= 0) {
+        if (p <= i && i + key.length <= p + w.length) return true;
+        p = text.indexOf(w, p + 1);
+      }
+    }
+    return false;
   }
 
   function singleCharOk(text, i) {
@@ -71,6 +86,7 @@
     while ((m = re.exec(text))) {
       var key = m[0], i = m.index;
       if (key.length === 1 && !singleCharOk(text, i)) continue;
+      if (inExcept(text, key, i)) continue;
       if (used[key]) continue;
       used[key] = true;
       if (!frag) frag = document.createDocumentFragment();
@@ -179,6 +195,7 @@
     if (opts.style === false) cfg.style = false;
     cfg.skip = opts.skip || [];
     if (opts.unique) cfg.unique = true;
+    if (opts.except) cfg.except = opts.except;
     cfg.root = opts.root || document.body;
     skipSel = BASE_SKIP + (cfg.skip.length ? ',' + cfg.skip.join(',') : '');
     buildRegex();

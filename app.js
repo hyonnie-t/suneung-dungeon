@@ -125,6 +125,12 @@ function cardAgainHTML(st, ph) {
   return `<details class="more card-again"><summary>📖 방금 배운 개념 카드 다시 보기</summary>${conceptCardHTML(b)}</details>`;
 }
 
+/* 낱말 풀이가 엉뚱한 말 속에서 걸리지 않게(2026-11-25 전수 점검에서 22곳). 새 문항을 넣다가 또 보이면 여기에 더한다. */
+const GLOSS_EXCEPT = {
+  "주화": ["민주화"], "도교": ["천도교"], "사상": ["역사상", "독립사상", "독립 사상", "사상운동", "사상 운동"], "서인": ["장서인"], "환국": ["전환국"],
+  "항로": ["이항로"], "제국": ["제국주의"], "동의": ["운동의"], "6조": ["헌의 6조"], "탕평": ["탕탕평평"]
+};
+
 /* ───────── 입구 ───────── */
 function renderGate() {
   const common = SESSIONS.filter(s => s.group === "common");
@@ -1075,6 +1081,6 @@ function init() {
   if (s && sessionById(s)) { S.session = sessionById(s); $("sessionCard").hidden = true; }
   renderGate();
   $("startBtn").addEventListener("click", startApp);
-  Glossary.start({ terms: GLOSSARY, unique: true, skip: [".eyebrow", ".title", ".hud", ".pick", ".house", ".choice", ".conf", ".tabs", ".toast", ".tbl", ".src", ".q-meta", ".key-card", ".house-reveal"] }); // 어려운 낱말 풀이. 선택지 안은 누르기와 겹쳐 밑줄을 긋지 않는다
+  Glossary.start({ terms: GLOSSARY, unique: true, except: GLOSS_EXCEPT, skip: [".eyebrow", ".title", ".hud", ".pick", ".house", ".choice", ".conf", ".tabs", ".toast", ".tbl", ".src", ".q-meta", ".key-card", ".house-reveal"] }); // 어려운 낱말 풀이. 선택지 안은 누르기와 겹쳐 밑줄을 긋지 않는다
 }
 init();
