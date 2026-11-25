@@ -384,14 +384,29 @@ function renderPlay() {
     const lead = !a ? "이 문제는 못 냈어(0점). 정답은 " + CIRCLE[q.ans - 1] + "."
       : a.ok ? (isDemo ? "맞혔어!" : "정답! 보스에게 " + Logic.damage({ ...a, kind: "attack" }) + "만큼 피해.") : "아직 자라는 중이야 🌱 정답은 " + CIRCLE[q.ans - 1] + ".";
     const ok = a && a.ok;
-    v.innerHTML = questionHTML(q, S.run.cur + 1, S.steps.length, { kind: st.kind }) +
+    // 2026-11-25 «정답 열쇠 뒤 학습 장치»: 설명 듣는 동안 ① 자료에서 단서 찾기(시범은 단서 형광펜) ② 한 줄 정리.
+    // 한 줄은 S.run.notes에 저장 → 틀린 공격 문제면 결과 화면 «왜 틀렸나»에 그대로 들어가 +1(규칙 그대로).
+    const clueOn = !!(S.run.clueSeen || {})[st.qid];
+    const wrongAtk = !isDemo && !ok;
+    const notePrompt = !a ? "정답이 " + CIRCLE[q.ans - 1] + "인 근거를 자료에서 찾아 한 줄로"
+      : ok ? "어떤 단서를 보고 맞혔는지 한 줄로(친구에게 설명하듯)"
+      : "왜 정답이 " + CIRCLE[q.ans - 1] + "인지 한 줄로" + (wrongAtk ? ` — ${Logic.NOTE_MIN}자 이상이면 +1점` : "");
+    v.innerHTML = questionHTML(q, S.run.cur + 1, S.steps.length, { kind: st.kind, clues: isDemo && clueOn ? b.clues : [] }) +
       `<div class="feedback ${ok ? "ok" : "bad"}"><b class="lead">${lead}</b>
-        <span class="pts-chip">${pts > 0 ? "+" : ""}${pts}점</span><br>${ok ? "" : "<b>왜?</b> "}${esc(q.exp)}${!ok && !isDemo ? `<p class="clue-line"><b>🔑 핵심 단서</b> ${esc(b.card.trap)}</p>` : ""}</div>` +
+        <span class="pts-chip">${pts > 0 ? "+" : ""}${pts}점</span><br>${ok ? "" : "<b>왜?</b> "}${esc(q.exp)}${!isDemo && (!ok || clueOn) ? `<p class="clue-line"><b>🔑 핵심 단서</b> ${esc(b.card.trap)}</p>` : ""}</div>` +
+      `<div class="card learn-card"><p class="h2">✍️ 설명 들으며 정리</p>
+        <ol class="learn-steps">
+          <li><b>단서 찾기</b> — 위 자료에서 답을 가리키는 낱말을 먼저 스스로 찾아 봐. ${(isDemo || ok) && !clueOn ? `<button class="btn" type="button" id="clueBtn">🔍 찾았으면 단서 확인</button>` : clueOn ? `<span class="hint">${isDemo ? "형광펜 친 곳이 단서야." : "핵심 단서는 위에 있어."}</span>` : `<span class="hint">핵심 단서는 위에 있어.</span>`}</li>
+          <li><b>한 줄 정리</b> — ${esc(notePrompt)}
+            <textarea id="learnNote" class="learn-note" rows="2" aria-label="한 줄 정리">${esc(S.run.notes[st.qid] || "")}</textarea></li>
+        </ol></div>` +
       (isDemo ? `<p class="eyebrow got">📖 도감에 개념 카드가 들어왔어</p>${conceptCardHTML(b)}` : "") +
       (waiting
         ? `<div class="card wait-card"><p class="h2">👂 선생님 설명 듣기</p><p>칠판에서 개념을 같이 확인해. 설명이 끝나면 선생님이 <b>다음 열쇠</b>를 보여 줘.</p></div>` + keyBoxHTML("다음 <b>열쇠 글자</b>")
         : `<button class="btn-main" type="button" id="nextBtn" style="margin-top:12px">${S.run.pending >= S.steps.length ? "결과 보기" : "다음 문제"}</button>`);
     markChoices(v, q, a ? a.pick : 0);
+    $("learnNote").addEventListener("input", e => { S.run.notes[st.qid] = e.target.value; saveRun(); });
+    if ($("clueBtn")) $("clueBtn").addEventListener("click", () => { S.run.clueSeen = { ...(S.run.clueSeen || {}), [st.qid]: true }; saveRun(); renderPlay(); });
     if (waiting) bindKey(); else $("nextBtn").addEventListener("click", () => goStep(S.run.pending));
     rise(v); return;
   }
@@ -497,7 +512,11 @@ function runText(sc, notes) {
   const h = houseByName(S.house);
   const head = ["[수능 던전] " + S.session.title + (h ? " · " + h.name + " 기숙사" : ""),
     "내 점수 " + sc.pts + "점 · 보스 공격 정답 " + sc.attackOk + "/" + sc.attackN + " · 피해 " + sc.dmg + " · 도감 카드 " + S.run.cards.length];
-  return head.concat(notes.length ? ["", "왜 헷갈렸나"].concat(notes.map(n => "- " + n.text)) : []).join("\n");
+  // 2026-11-25: 결과 화면 «한 줄 정리»는 맞힌 문제에도 쓰므로, 틀린 공격 문제 것만 «왜 헷갈렸나», 나머지는 «정리한 한 줄»로 나눈다
+  const wrong = new Set(answersList().filter(a => a.kind === "attack" && a.pick && !a.ok).map(a => a.id));
+  const w = notes.filter(n => wrong.has(n.id)), o = notes.filter(n => !wrong.has(n.id));
+  return head.concat(w.length ? ["", "왜 헷갈렸나"].concat(w.map(n => "- " + n.text)) : [])
+    .concat(o.length ? ["", "정리한 한 줄"].concat(o.map(n => "- " + n.text)) : []).join("\n");
 }
 /* v183 (2026-11-17) 저장 재시도 — history26 snippets/submit_retry.js 원본을 복사(설명은 원본에).
  * 오류 화면·HTTP 오류·네트워크 끊김·30초 초과면 1~3초 쉬고 최대 2번 더(기본 제출만, 같은 clientId로). 정상 JSON 오류는 다시 안 보냄. */

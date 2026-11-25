@@ -335,3 +335,18 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 @keyframes dsPop{from{transform:scale(.4);opacity:0}}
 .draw-foot{color:var(--paper);opacity:.75}
 @media (prefers-reduced-motion:reduce){.big-timer .bt-num,.draw-slot,.draw-col li{animation:none!important}}
+
+/* 2026-11-25 교사 화면 머리글 한 줄(제목+탭) — 전자칠판에 문제를 더 많이 */
+.t-bar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;background:var(--stone);padding:4px 0;margin-bottom:8px}
+.t-title{margin:0;color:var(--paper);font:800 1.25rem var(--sans);white-space:nowrap}
+.t-title small{color:var(--torch);font-size:.8rem;font-weight:700;margin-left:4px}
+.t-bar .tabs{position:static;margin:0;padding:0;background:none;flex-wrap:wrap}
+#sTeacher{padding-top:0}
+/* 정답 열쇠 뒤 학습 장치 */
+.learn-card{margin-top:16px;border-left:6px solid var(--ok)}
+.learn-steps{margin:8px 0 0;padding-left:1.4em;display:grid;gap:16px}
+.learn-steps li{line-height:1.6}
+.learn-steps .btn{margin-left:8px;min-height:40px}
+.learn-note{display:block;width:100%;margin-top:8px;font:16px/1.5 var(--sans);padding:8px;border:1.5px solid var(--line);border-radius:8px;resize:vertical}
+
+.t-bar ~ .tab-pane .live-top,#sTeacher .live-top{top:49px} /* 한 줄 머리글(.t-bar 49px)에 맞물림 */
