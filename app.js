@@ -117,6 +117,14 @@ function conceptCardHTML(b, big) {
     <p class="concept-trap"><b>헷갈리면 이것만</b> ${esc(b.card.trap)}</p></div>`;
 }
 
+/* 공격 문제를 푸는 동안 그 묶음의 개념 카드를 접힌 칸으로 다시 볼 수 있다(2026-11-25 효니 «수업을 안 하고 문풀로 대신해서 적당한 비계 설명이 필요»).
+ * 시범 문제에서 선생님이 풀어 준 카드 그대로다. 점수·베팅·제출 값은 건드리지 않고, 펼쳤는지도 기록하지 않는다. 시범 문제·모의고사에는 안 붙는다. */
+function cardAgainHTML(st, ph) {
+  if (!st || st.kind !== "attack" || ph !== "q") return "";
+  const b = bundleOf(st.bundle); if (!b || !b.card) return "";
+  return `<details class="more card-again"><summary>📖 방금 배운 개념 카드 다시 보기</summary>${conceptCardHTML(b)}</details>`;
+}
+
 /* ───────── 입구 ───────── */
 function renderGate() {
   const common = SESSIONS.filter(s => s.group === "common");
@@ -330,6 +338,7 @@ function renderPlay() {
   if (ph === "q" || ph === "locked") {
     const a = S.run.answers[st.qid];
     v.innerHTML = questionHTML(q, S.run.cur + 1, S.steps.length, { kind: st.kind }) +
+      cardAgainHTML(st, ph) +
       (ph === "q"
         ? `<div class="card conf-card"><p class="h2">자신감</p><div class="conf-row">${CONF.map(c => `<button type="button" class="conf ${S.run.conf === c.id ? "on" : ""}" data-c="${c.id}"><b>${c.label}</b><small>${st.kind === "demo" ? "시범은 내면 +1" : c.hint}</small></button>`).join("")}</div>
            <button class="btn-main" type="button" id="lockBtn" disabled>제출하기</button><p class="hint">제출하면 바꿀 수 없어.</p></div>

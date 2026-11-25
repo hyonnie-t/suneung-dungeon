@@ -285,3 +285,9 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 .house-reveal .house-art img{width:144px;border-radius:50%}
 .house .house-art img{width:56px;border-radius:50%;margin-bottom:4px}
 .card > .victory-banner{margin:0 0 16px;max-width:none}
+
+/* 2026-11-25 공격 문제 화면 «개념 카드 다시 보기» 접힌 칸 — 누르기 쉽게 단추 높이 48, 펼칠 때 살짝 올라옴(줄이기 설정이면 위 전역 규칙이 끔) */
+.more.card-again{margin:8px 0}
+.more.card-again summary{display:flex;align-items:center;min-height:48px;margin-top:0;padding:0 16px;border:1px dashed var(--torch);border-radius:8px;color:var(--paper);background:rgba(255,255,255,.04)}
+.more.card-again[open] summary{margin-bottom:8px}
+.more.card-again[open] > .card{animation:coverIn .2s ease}
