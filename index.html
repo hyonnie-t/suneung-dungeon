@@ -12,7 +12,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="671">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="style.css?v=20261125v2">
+<link rel="stylesheet" href="style.css?v=20261125v3">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 열쇠 글자 없이도 넘어갈 수 있어</div>
@@ -85,16 +85,14 @@
 
 <!-- ───────── 교사 화면 (?teacher=1) ───────── -->
 <section id="sTeacher" class="page wide" hidden>
-  <header class="gate-head">
-    <p class="eyebrow">교사 화면</p>
-    <h1 class="title">수능 던전 · 수업 진행</h1>
-  </header>
+  <!-- 2026-11-25: 전자칠판에 문제를 더 많이 보이게 제목과 탭을 한 줄로(효니 요청) -->
+  <div class="t-bar"><h1 class="t-title">수능 던전 <small>교사</small></h1>
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="live" role="tab">수업 진행</button>
     <button class="tab" data-tab="houses" role="tab">기숙사</button>
     <button class="tab" data-tab="points" role="tab">기숙사 포인트</button>
     <button class="tab" data-tab="bank" role="tab">문제 은행</button>
-  </nav>
+  </nav></div>
   <div id="tLive" class="tab-pane"></div>
   <div id="tHouses" class="tab-pane" hidden></div>
   <div id="tPoints" class="tab-pane" hidden></div>
@@ -110,6 +108,6 @@
 <script src="questions.js?v=20261123v1"></script>
 <script src="plan.js?v=20261125v1"></script>
 <script src="logic.js?v=20261103v2"></script>
-<script src="app.js?v=20261125v7"></script>
+<script src="app.js?v=20261125v8"></script>
 </body>
 </html>
