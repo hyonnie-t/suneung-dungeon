@@ -669,8 +669,16 @@ async function tGet(params) {
 async function tPost(body) {
   return (await fetch(CONFIG.SHEET_WEBAPP_URL, { method: "POST", body: JSON.stringify(body) })).json();
 }
-function tokenField() { return `<label class="field"><span>교사 토큰</span><input id="tokenIn" type="password" autocomplete="off" value="${esc(teacherToken())}"></label>`; }
-function readToken() { const el = $("tokenIn"); if (el && el.value.trim()) setToken(el.value.trim()); return T.token; }
+/* 토큰 칸은 탭마다 하나씩 그려지고 안 보이는 탭도 DOM에 남는다 — id로 찾으면 숨은 첫 칸(빈 값)을 읽는다(2026-11-25 효니 «토큰 넣어달래»).
+ * 그래서 class로 찾아 «지금 보이는 칸»을 읽고, 한 칸에 넣으면 다른 탭의 칸에도 같이 넣는다. */
+function tokenField() { return `<label class="field"><span>교사 토큰</span><input class="tokenIn" type="password" autocomplete="off" value="${esc(teacherToken())}" oninput="tokenTyped(this)"></label>`; }
+function tokenTyped(el) { const v = el.value.trim(); if (v) setToken(v); document.querySelectorAll("input.tokenIn").forEach(o => { if (o !== el) o.value = el.value; }); }
+function readToken() {
+  const els = [...document.querySelectorAll("input.tokenIn")];
+  const el = els.find(e => !e.closest("[hidden]") && e.value.trim()) || els.find(e => e.value.trim());
+  if (el) setToken(el.value.trim());
+  return T.token;
+}
 
 function renderTeacher() {
   show("sTeacher");
