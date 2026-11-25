@@ -357,7 +357,7 @@ function renderPlay() {
         ? `<div class="card conf-card"><p class="h2">자신감</p><div class="conf-row">${CONF.map(c => `<button type="button" class="conf ${S.run.conf === c.id ? "on" : ""}" data-c="${c.id}"><b>${c.label}</b><small>${st.kind === "demo" ? "시범은 내면 +1" : c.hint}</small></button>`).join("")}</div>
            <button class="btn-main" type="button" id="lockBtn" disabled>제출하기</button><p class="hint">제출하면 바꿀 수 없어.</p></div>
            <details class="more late"><summary>못 풀었는데 선생님이 다음으로 넘어갔어</summary>${keyBoxHTML("칠판의 지금 <b>열쇠 글자</b>를 넣으면 거기로 가(이 문제는 0점).")}</details>`
-        : `<div class="card locked-card"><p class="lead-ok">✔ 제출했어 — ${CIRCLE[a.pick - 1]} · ${esc((CONF.find(c => c.id === a.conf) || CONF[2]).label)}</p><p>선생님이 정답을 공개하면 칠판에 <b>✅ 정답 열쇠</b>가 떠. 그걸 넣으면 네 결과와 해설이 보여.</p></div>` + keyBoxHTML("<b>✅ 정답 열쇠</b>"));
+        : `<div class="card locked-card"><p class="lead-ok">✔ 제출했어 — ${CIRCLE[a.pick - 1]} · ${esc((CONF.find(c => c.id === a.conf) || CONF[2]).label)}</p><p>선생님이 정답을 공개하면 칠판에 <b>✅ 정답 열쇠</b>가 떠. 그걸 넣으면 네 결과와 해설이 보여.</p><p class="hint">칠판이 벌써 다음 문제로 넘어갔으면 거기 뜬 <b>🔑 열쇠</b>를 넣어도 돼(결과부터 보여 줘).</p></div>` + keyBoxHTML("<b>✅ 정답 열쇠</b> 또는 칠판의 <b>🔑 열쇠</b>"));
     if (ph === "q") {
       const ready = () => { $("lockBtn").disabled = !(S.run.picked && S.run.conf); };
       v.querySelectorAll(".choice").forEach(b => {
@@ -713,7 +713,7 @@ function renderTeacher() {
   show("sTeacher");
   document.querySelectorAll(".tab").forEach(b => {
     b.classList.toggle("on", b.dataset.tab === T.tab);
-    b.onclick = () => { T.tab = b.dataset.tab; renderTeacher(); };
+    b.onclick = () => { T.tab = b.dataset.tab; T.assignOpen = false; renderTeacher(); }; // 탭을 옮기면 «교사용»(성적) 칸은 닫힌다
   });
   $("tLive").hidden = T.tab !== "live"; $("tHouses").hidden = T.tab !== "houses"; $("tPoints").hidden = T.tab !== "points"; $("tBank").hidden = T.tab !== "bank";
   if (T.tab !== "live") stopPoll();
@@ -794,7 +794,8 @@ function renderLive() {
   bind("lClue", () => { L.clue = !L.clue; liveSave(); renderLive(); });
   bind("lCard", () => { L.card = !L.card; liveSave(); renderLive(); });
   bind("lLayer", () => { L.layerCard = !L.layerCard; liveSave(); renderLive(); });
-  bind("lPlus", () => { L.plus = (L.plus || 0) + 30; liveSave(); T.beep = null; liveTick(); });
+  // 시간이 이미 끝났으면 «지금부터 30초», 남아 있으면 남은 시간에 30초를 더한다
+  bind("lPlus", () => { const el = (Date.now() - L.openedAt) / 1000, left = STEP_SEC + (L.plus || 0) - el; L.plus = (left > 0 ? (L.plus || 0) : Math.ceil(el) - STEP_SEC) + 30; liveSave(); T.beep = null; liveTick(); });
   bind("lSound", () => { setSound(!soundOn()); if (soundOn()) beep(880, 0.12); renderLive(); });
   bind("lDraw", () => openDraw(L));
   bindAbsent(L);
@@ -1061,7 +1062,7 @@ function renderAssign() {
       let j = await send(false);
       if (j.already && confirm("이미 확정된 배정이 있어. 덮어쓸까? (이미 기숙사를 본 학생은 바뀐 기숙사를 못 봐 — 태블릿에 남은 결과가 우선)")) j = await send(true);
       if (j.result !== "success") throw new Error(j.message);
-      T.assign = { ...j, basis: T.assign.basis }; toast("확정했어"); renderAssign();
+      T.assign = { ...j, basis: T.assign.basis }; T.roster = null; T.rows = null; T.rosterView = null; toast("확정했어"); renderAssign(); // 발표·결석 칸이 새 명단을 다시 불러오게
     } catch (e) { $("aErr").textContent = e.message || "확정 실패"; }
   });
 }
