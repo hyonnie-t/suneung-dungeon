@@ -117,6 +117,20 @@ function conceptCardHTML(b, big) {
     <p class="concept-trap"><b>헷갈리면 이것만</b> ${esc(b.card.trap)}</p></div>`;
 }
 
+/* 공격 문제를 푸는 동안 그 묶음의 개념 카드를 접힌 칸으로 다시 볼 수 있다(2026-11-25 효니 «수업을 안 하고 문풀로 대신해서 적당한 비계 설명이 필요»).
+ * 시범 문제에서 선생님이 풀어 준 카드 그대로다. 점수·베팅·제출 값은 건드리지 않고, 펼쳤는지도 기록하지 않는다. 시범 문제·모의고사에는 안 붙는다. */
+function cardAgainHTML(st, ph) {
+  if (!st || st.kind !== "attack" || ph !== "q") return "";
+  const b = bundleOf(st.bundle); if (!b || !b.card) return "";
+  return `<details class="more card-again"><summary>📖 방금 배운 개념 카드 다시 보기</summary>${conceptCardHTML(b)}</details>`;
+}
+
+/* 낱말 풀이가 엉뚱한 말 속에서 걸리지 않게(2026-11-25 전수 점검에서 22곳). 새 문항을 넣다가 또 보이면 여기에 더한다. */
+const GLOSS_EXCEPT = {
+  "주화": ["민주화"], "도교": ["천도교"], "사상": ["역사상", "독립사상", "독립 사상", "사상운동", "사상 운동"], "서인": ["장서인"], "환국": ["전환국"],
+  "항로": ["이항로"], "제국": ["제국주의"], "동의": ["운동의"], "6조": ["헌의 6조"], "탕평": ["탕탕평평"]
+};
+
 /* ───────── 입구 ───────── */
 function renderGate() {
   const common = SESSIONS.filter(s => s.group === "common");
@@ -330,6 +344,7 @@ function renderPlay() {
   if (ph === "q" || ph === "locked") {
     const a = S.run.answers[st.qid];
     v.innerHTML = questionHTML(q, S.run.cur + 1, S.steps.length, { kind: st.kind }) +
+      cardAgainHTML(st, ph) +
       (ph === "q"
         ? `<div class="card conf-card"><p class="h2">자신감</p><div class="conf-row">${CONF.map(c => `<button type="button" class="conf ${S.run.conf === c.id ? "on" : ""}" data-c="${c.id}"><b>${c.label}</b><small>${st.kind === "demo" ? "시범은 내면 +1" : c.hint}</small></button>`).join("")}</div>
            <button class="btn-main" type="button" id="lockBtn" disabled>제출하기</button><p class="hint">제출하면 바꿀 수 없어.</p></div>
@@ -1066,6 +1081,6 @@ function init() {
   if (s && sessionById(s)) { S.session = sessionById(s); $("sessionCard").hidden = true; }
   renderGate();
   $("startBtn").addEventListener("click", startApp);
-  Glossary.start({ terms: GLOSSARY, unique: true, skip: [".eyebrow", ".title", ".hud", ".pick", ".house", ".choice", ".conf", ".tabs", ".toast", ".tbl", ".src", ".q-meta", ".key-card", ".house-reveal"] }); // 어려운 낱말 풀이. 선택지 안은 누르기와 겹쳐 밑줄을 긋지 않는다
+  Glossary.start({ terms: GLOSSARY, unique: true, except: GLOSS_EXCEPT, skip: [".eyebrow", ".title", ".hud", ".pick", ".house", ".choice", ".conf", ".tabs", ".toast", ".tbl", ".src", ".q-meta", ".key-card", ".house-reveal"] }); // 어려운 낱말 풀이. 선택지 안은 누르기와 겹쳐 밑줄을 긋지 않는다
 }
 init();
