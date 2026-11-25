@@ -291,3 +291,47 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 .more.card-again summary{display:flex;align-items:center;min-height:48px;margin-top:0;padding:0 16px;border:1px dashed var(--torch);border-radius:8px;color:var(--paper);background:rgba(255,255,255,.04)}
 .more.card-again[open] summary{margin-bottom:8px}
 .more.card-again[open] > .card{animation:coverIn .2s ease}
+
+/* 2026-11-25 수업 뒤 고침: 큰 타이머·정답 열쇠·결석 체크·기숙사 발표. 이 앱엔 --space 토큰이 없어 8pt 눈금(4·8·16·24·32) 값을 그대로 쓴다. */
+.big-timer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px}
+.bt-num{font:900 3rem/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--torch);min-width:3.2em}
+@media (min-width:1100px){.bt-num{font-size:4rem}}
+.bt-track{flex:1;min-width:120px;height:16px;background:#3b3542;border-radius:8px;overflow:hidden}
+.bt-track i{display:block;height:100%;width:100%;background:var(--torch);transition:width .5s linear}
+.bt-btn{min-height:40px;color:var(--paper);border-color:var(--stone-line)}
+.big-timer.hurry .bt-num{color:#ff6b6b;animation:btPulse 1s ease-in-out infinite}
+.big-timer.hurry .bt-track i{background:#ff6b6b}
+.big-timer.over .bt-num{color:#ff6b6b;animation:btShake .4s ease-in-out 3}
+.big-timer.stop .bt-num{color:var(--ok-wash);font-size:2rem}
+@keyframes btPulse{50%{transform:scale(1.08)}}
+@keyframes btShake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.key-pill.ans{background:#7fd69b}
+.big-key.ans b{background:#7fd69b}
+.ans-key-card{border:3px solid #7fd69b}
+.wait-card{margin-top:16px;border-left:6px solid var(--torch)}
+.abs-card .h2 small{font-weight:400}
+.abs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin-top:8px}
+.abs-chip{min-height:40px;padding:4px 8px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:15px var(--sans);cursor:pointer;text-align:left}
+.abs-chip.on{background:var(--bad-wash);border-color:var(--bad);color:var(--bad);text-decoration:line-through;font-weight:700}
+.teacher-only{border:2px dashed var(--bad)}
+/* 기숙사 발표(칠판 전체 화면) */
+.draw-ov{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--stone-deep);color:var(--paper);overflow:auto;font-family:var(--sans)}
+.draw-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:1.6rem}
+.draw-head .hint{color:var(--paper);opacity:.75;font-size:1.1rem}
+.draw-btns{margin-left:auto;display:flex;gap:8px}
+.draw-btns .btn{min-height:48px;font-size:1.05rem}
+.draw-slot{--hcolor:#555;align-self:center;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:min(480px,90vw);padding:24px 32px;border-radius:16px;background:#2a2530;border:4px solid var(--hcolor);transition:border-color .1s}
+.ds-name{font:900 3rem/1.1 var(--sans)}
+.ds-house{font:800 2rem var(--sans);color:var(--hcolor);filter:brightness(1.4)}
+.draw-slot.land{animation:dsLand .4s ease-out}
+@keyframes dsLand{40%{transform:scale(1.12)}}
+.draw-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;flex:1}
+@media (max-width:700px){.draw-cols{grid-template-columns:repeat(2,1fr)}}
+.draw-col{background:#2a2530;border-top:8px solid var(--hcolor);border-radius:8px;padding:16px}
+.draw-col b{font-size:1.4rem}
+.draw-col ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.draw-col li{padding:4px 8px;border-radius:8px;background:var(--hcolor);color:#fff;font:700 1.15rem var(--sans)}
+.draw-col li.pop{animation:dsPop .35s ease-out}
+@keyframes dsPop{from{transform:scale(.4);opacity:0}}
+.draw-foot{color:var(--paper);opacity:.75}
+@media (prefers-reduced-motion:reduce){.big-timer .bt-num,.draw-slot,.draw-col li{animation:none!important}}

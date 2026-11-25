@@ -61,6 +61,8 @@ function sessionById(id) { return SESSIONS.find(s => s.id === id); }
 function stepsOf(s) { return Logic.steps(bundlesForSession(s)); }
 // 열쇠 글자: 차시마다 시작 위치를 달리해 지난 차시 글자로는 안 열리게
 function keyFor(sessIdx, k) { return KEYS[(sessIdx * 7 + k) % KEYS.length]; }
+// 정답 열쇠: 단계 k의 정답을 칠판에서 공개할 때 뜬다. 넣으면 그 문제 결과만 보이고, 다음 문제는 keyFor(k+1)로 연다.
+function resultKeyFor(sessIdx, k) { return RKEYS[(sessIdx * 5 + k) % RKEYS.length]; }
 const normKey = s => String(s || "").replace(/\s+/g, "");
 // 모의고사: 올해 수능(fresh)과 예전 기출을 반반(효니 결정 2026-11-23 «반반 섞기», 올해 수능 3점이 중3에게 어려워서).
 // 올해 수능은 절반(올림)을 2점 먼저·시험 번호 순으로, 예전 기출은 지금 문항이 가장 적은 층부터 하나씩 채운다(시대 고르게). 고른 문항은 층(시대) 순서로.
@@ -278,6 +280,9 @@ function keyBoxHTML(msg) {
 function bindKey() {
   const go = () => {
     const val = normKey($("keyIn").value);
+    // 정답 열쇠(지금 문제): 제출했든 못 냈든 결과·해설을 보여 주고 거기서 기다린다
+    const ph = S.run.phase;
+    if (val && S.run.cur >= 0 && S.run.cur < S.steps.length && (ph === "q" || ph === "locked") && val === resultKeyFor(S.sessIdx, S.run.cur)) { openResult(); return; }
     for (let j = S.run.cur + 1; j <= S.steps.length; j++) {
       if (val && val === keyFor(S.sessIdx, j)) { openStep(j); return; }
     }
@@ -287,16 +292,19 @@ function bindKey() {
   $("keyIn").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
   if ($("keySkip")) $("keySkip").addEventListener("click", () => openStep(S.run.cur + 1));
 }
-// 단계 j를 연다. 지금 단계에서 답한 게 있으면 결과부터 보여 준다(교사가 칠판에서 정답을 공개한 뒤라서).
+// 정답 열쇠로 지금 문제 결과를 연다. 다음 문제는 선생님이 개념 확인을 끝내고 보여 주는 열쇠로만 열린다(2026-11-25 수업 뒤).
+function openResult() {
+  S.run.phase = "result"; S.run.pending = null;
+  saveRun(); renderPlay(); window.scrollTo(0, 0);
+}
+// 단계 j를 연다. 지금 단계에서 답했는데 결과를 아직 못 봤으면(정답 열쇠를 놓침) 결과부터 보여 준다.
 function openStep(j) {
   const prev = S.run.cur;
-  S.run.pending = j;
   const answeredPrev = prev >= 0 && prev < S.steps.length && S.run.answers[S.steps[prev].qid];
   // 2026-11-25 자동 저장: 묶음이 끝나거나 마지막 문제를 넘기면 지금까지 결과를 조용히 보낸다(«결과 보내기» 안 눌러도 마감 가능)
   if (prev >= 0 && prev < S.steps.length && (j >= S.steps.length || (S.steps[j] || {}).bundle !== S.steps[prev].bundle)) autoSave();
-  if (answeredPrev) { S.run.phase = "result"; }
-  else { goStep(j); return; }
-  saveRun(); renderPlay();
+  if (answeredPrev && S.run.phase !== "result") { S.run.pending = j; S.run.phase = "result"; saveRun(); renderPlay(); return; }
+  goStep(j);
 }
 function goStep(j) {
   // 열지 못하고 지나간 데모의 개념 카드도 도감에 넣는다(설명은 칠판에서 들었으니)
@@ -349,7 +357,7 @@ function renderPlay() {
         ? `<div class="card conf-card"><p class="h2">자신감</p><div class="conf-row">${CONF.map(c => `<button type="button" class="conf ${S.run.conf === c.id ? "on" : ""}" data-c="${c.id}"><b>${c.label}</b><small>${st.kind === "demo" ? "시범은 내면 +1" : c.hint}</small></button>`).join("")}</div>
            <button class="btn-main" type="button" id="lockBtn" disabled>제출하기</button><p class="hint">제출하면 바꿀 수 없어.</p></div>
            <details class="more late"><summary>못 풀었는데 선생님이 다음으로 넘어갔어</summary>${keyBoxHTML("칠판의 지금 <b>열쇠 글자</b>를 넣으면 거기로 가(이 문제는 0점).")}</details>`
-        : `<div class="card locked-card"><p class="lead-ok">✔ 제출했어 — ${CIRCLE[a.pick - 1]} · ${esc((CONF.find(c => c.id === a.conf) || CONF[2]).label)}</p><p>정답은 선생님이 칠판에서 공개해. 설명을 듣고 다음 열쇠 글자를 넣어.</p></div>` + keyBoxHTML("다음 <b>열쇠 글자</b>"));
+        : `<div class="card locked-card"><p class="lead-ok">✔ 제출했어 — ${CIRCLE[a.pick - 1]} · ${esc((CONF.find(c => c.id === a.conf) || CONF[2]).label)}</p><p>선생님이 정답을 공개하면 칠판에 <b>✅ 정답 열쇠</b>가 떠. 그걸 넣으면 네 결과와 해설이 보여.</p></div>` + keyBoxHTML("<b>✅ 정답 열쇠</b>"));
     if (ph === "q") {
       const ready = () => { $("lockBtn").disabled = !(S.run.picked && S.run.conf); };
       v.querySelectorAll(".choice").forEach(b => {
@@ -367,18 +375,24 @@ function renderPlay() {
     return;
   }
   if (ph === "result") {
-    const a = S.run.answers[st.qid];
-    const pts = Logic.answerPts({ ...a, kind: st.kind });
+    const a = S.run.answers[st.qid]; // 못 내고 정답 열쇠를 넣었으면 없음(0점)
     const b = bundleOf(st.bundle);
     const isDemo = st.kind === "demo";
     if (isDemo && S.run.cards.indexOf(st.bundle) < 0) { S.run.cards.push(st.bundle); saveRun(); renderHud(); }
+    const waiting = S.run.pending == null; // 정답 열쇠로 열었으면 선생님 설명이 끝날 때까지 여기서 기다린다
+    const pts = a ? Logic.answerPts({ ...a, kind: st.kind }) : 0;
+    const lead = !a ? "이 문제는 못 냈어(0점). 정답은 " + CIRCLE[q.ans - 1] + "."
+      : a.ok ? (isDemo ? "맞혔어!" : "정답! 보스에게 " + Logic.damage({ ...a, kind: "attack" }) + "만큼 피해.") : "아직 자라는 중이야 🌱 정답은 " + CIRCLE[q.ans - 1] + ".";
+    const ok = a && a.ok;
     v.innerHTML = questionHTML(q, S.run.cur + 1, S.steps.length, { kind: st.kind }) +
-      `<div class="feedback ${a.ok ? "ok" : "bad"}"><b class="lead">${a.ok ? (isDemo ? "맞혔어!" : "정답! 보스에게 " + Logic.damage({ ...a, kind: "attack" }) + "만큼 피해.") : "아직 자라는 중이야 🌱 정답은 " + CIRCLE[q.ans - 1] + "."}</b>
-        <span class="pts-chip">${pts > 0 ? "+" : ""}${pts}점</span><br>${a.ok ? "" : "<b>왜?</b> "}${esc(q.exp)}${!a.ok && !isDemo ? `<p class="clue-line"><b>🔑 핵심 단서</b> ${esc(b.card.trap)}</p>` : ""}</div>` +
+      `<div class="feedback ${ok ? "ok" : "bad"}"><b class="lead">${lead}</b>
+        <span class="pts-chip">${pts > 0 ? "+" : ""}${pts}점</span><br>${ok ? "" : "<b>왜?</b> "}${esc(q.exp)}${!ok && !isDemo ? `<p class="clue-line"><b>🔑 핵심 단서</b> ${esc(b.card.trap)}</p>` : ""}</div>` +
       (isDemo ? `<p class="eyebrow got">📖 도감에 개념 카드가 들어왔어</p>${conceptCardHTML(b)}` : "") +
-      `<button class="btn-main" type="button" id="nextBtn" style="margin-top:12px">${S.run.pending >= S.steps.length ? "결과 보기" : "다음 문제"}</button>`;
-    markChoices(v, q, a.pick);
-    $("nextBtn").addEventListener("click", () => goStep(S.run.pending));
+      (waiting
+        ? `<div class="card wait-card"><p class="h2">👂 선생님 설명 듣기</p><p>칠판에서 개념을 같이 확인해. 설명이 끝나면 선생님이 <b>다음 열쇠</b>를 보여 줘.</p></div>` + keyBoxHTML("다음 <b>열쇠 글자</b>")
+        : `<button class="btn-main" type="button" id="nextBtn" style="margin-top:12px">${S.run.pending >= S.steps.length ? "결과 보기" : "다음 문제"}</button>`);
+    markChoices(v, q, a ? a.pick : 0);
+    if (waiting) bindKey(); else $("nextBtn").addEventListener("click", () => goStep(S.run.pending));
     rise(v); return;
   }
 }
@@ -740,7 +754,9 @@ function renderLive() {
   v.className = "tab-pane layer-" + layer;
   v.innerHTML = `<div class="live-top">
       <div class="live-head"><span class="live-title">${esc(s.title)} · ${Number(L.gb.slice(1))}반</span><span class="live-label">${esc(label)}</span>
-        <span class="key-pill" title="학생이 넣을 열쇠 글자">🔑 ${esc(L.k < 0 ? keyFor(sIdx, 0) : keyNow)}</span><span class="live-time" id="liveTime"></span></div>
+        <span class="key-pill" title="학생이 넣을 열쇠 글자(이 문제 열기)">🔑 ${esc(L.k < 0 ? keyFor(sIdx, 0) : keyNow)}</span>${st && L.reveal ? `<span class="key-pill ans" title="학생이 넣으면 자기 결과·해설을 본다">✅ ${esc(resultKeyFor(sIdx, L.k))}</span>` : ""}</div>
+      ${st ? `<div class="big-timer" id="bigTimer"><span class="bt-num" id="liveTime"></span><div class="bt-track"><i id="liveTimeBar"></i></div>
+        <button class="btn ghost bt-btn" type="button" id="lPlus">＋30초</button><button class="btn ghost bt-btn" type="button" id="lSound" aria-pressed="${soundOn()}">${soundOn() ? "🔔 소리 켬" : "🔕 소리 끔"}</button></div>` : ""}
       <div class="live-bars" id="liveBars">${liveBarsHTML(s, steps, layer)}</div>
     </div>
     <div id="liveBody"></div>
@@ -756,13 +772,16 @@ function renderLive() {
   const body = $("liveBody");
   if (L.k < 0) {
     body.innerHTML = `<div class="card boss-card">${bossArt(layerOf(layer).boss)}<h2>${esc(layerOf(layer).boss.name)}</h2><p>${esc(layerOf(layer).boss.line)}</p>
-      <p class="big-key">열쇠 글자 <b>${esc(keyFor(sIdx, 0))}</b></p><p>학생: 학번·이름 → (처음이면 성향 테스트) → 대기실에서 위 글자를 넣으면 첫 문제가 열린다.</p></div>` + (L.layerCard ? layerCardHTML(layer) : "");
+      <p class="big-key">열쇠 글자 <b>${esc(keyFor(sIdx, 0))}</b></p><p>학생: 학번·이름 → (처음이면 성향 테스트) → 대기실에서 위 글자를 넣으면 첫 문제가 열린다.</p>
+      <div class="btn-row"><button class="btn primary" type="button" id="lDraw">🎲 기숙사 발표</button></div></div>
+      <div id="absBox">${absentBoxHTML(L)}</div>` + (L.layerCard ? layerCardHTML(layer) : "");
   } else if (L.k >= steps.length) {
     body.innerHTML = liveEndHTML(s, steps, sIdx) + (L.layerCard ? layerCardHTML(layer) : "");
   } else {
     const q = qById(st.qid), b = bundleOf(st.bundle);
     body.innerHTML = `<div class="live-grid ${L.card && st.kind === "demo" ? "with-card" : ""}"><div>${questionHTML(q, L.k + 1, steps.length, { kind: st.kind, big: true, clues: L.clue ? b.clues : [] })}</div>
       ${L.card && st.kind === "demo" ? `<div>${conceptCardHTML(b, true)}</div>` : ""}</div>
+      ${L.reveal ? `<div class="card ans-key-card"><p class="big-key ans">✅ 정답 열쇠 <b>${esc(resultKeyFor(sIdx, L.k))}</b></p><p>학생은 이 글자를 넣으면 자기 결과·해설·개념 카드를 봐. 개념 확인이 끝나면 «다음 ▶»을 눌러 다음 열쇠를 보여 줘.</p></div>` : ""}
       ${L.dist || L.reveal ? `<div class="card dist" id="distBox">${distHTML(q, L.snaps[st.qid] || [], L.reveal)}</div>` : ""}
       ${L.layerCard ? layerCardHTML(layer) : ""}`;
     if (L.reveal) markChoices(body, q, 0);
@@ -775,6 +794,10 @@ function renderLive() {
   bind("lClue", () => { L.clue = !L.clue; liveSave(); renderLive(); });
   bind("lCard", () => { L.card = !L.card; liveSave(); renderLive(); });
   bind("lLayer", () => { L.layerCard = !L.layerCard; liveSave(); renderLive(); });
+  bind("lPlus", () => { L.plus = (L.plus || 0) + 30; liveSave(); T.beep = null; liveTick(); });
+  bind("lSound", () => { setSound(!soundOn()); if (soundOn()) beep(880, 0.12); renderLive(); });
+  bind("lDraw", () => openDraw(L));
+  bindAbsent(L);
   bind("lEnd", () => { if (!confirm("수업 진행을 끝내고 설정으로 돌아갈까? (기록한 분포는 지워져)")) return; stopPoll(); T.live = null; ss("sd2_live", null); renderLive(); });
   // 타이머(표시만)와 분포 폴링 — 이미 같은 문제를 폴링 중이면 그대로 둔다(다시 그릴 때마다 새로 시작하면 요청이 끝없이 이어진다)
   if (!T.tickT) T.tickT = setInterval(liveTick, 500);
@@ -785,11 +808,126 @@ function renderLive() {
     if (qid) { pollOnce(qid); T.poll = setInterval(() => pollOnce(qid), 2000); }
   }
 }
+/* 문제 타이머(2026-11-25 수업 뒤: 더 크게 + 소리). 넘겨도 막지 않는다. 정답을 공개하면 멈춘다.
+ * 소리: 10초 남으면 «띵» 한 번, 3·2·1초 짧게, 끝나면 세 번. 🔔 버튼으로 끄고 켠다(이 기기에 저장). */
+let AC = null;
+function soundOn() { return store.get("sd2_sound") !== false; }
+function setSound(on) { store.set("sd2_sound", !!on); }
+function beep(freq, dur, when) {
+  if (!soundOn()) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === "suspended") AC.resume();
+    const t0 = AC.currentTime + (when || 0), o = AC.createOscillator(), g = AC.createGain();
+    o.type = "square"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  } catch (e) { /* 소리 못 내는 기기 */ }
+}
+// 브라우저는 클릭 전에는 소리를 막아서, 교사 화면 첫 클릭 때 소리 장치를 깨운다
+document.addEventListener("pointerdown", () => { if (!AC && soundOn() && !$("sTeacher").hidden) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }, { once: false, passive: true });
 function liveTick() {
   const el = $("liveTime"), L = T.live; if (!el || !L) return;
   const st = stepsOf(sessionById(L.sessionId))[L.k];
-  const s2 = (Date.now() - L.openedAt) / 1000;
-  el.textContent = st ? (s2 < STEP_SEC ? "⏱ " + fmtSec(STEP_SEC - s2) : "⏱ 시간 끝") : "";
+  if (!st) { el.textContent = ""; return; }
+  const total = STEP_SEC + (L.plus || 0);
+  const left = Math.ceil(total - (Date.now() - L.openedAt) / 1000);
+  const box = $("bigTimer"), bar = $("liveTimeBar");
+  if (L.reveal) { el.textContent = "정답 공개"; if (box) box.className = "big-timer stop"; if (bar) bar.style.width = "0%"; return; }
+  el.textContent = left > 0 ? fmtSec(left) : "시간 끝!";
+  if (bar) bar.style.width = Math.max(0, Math.min(100, left / total * 100)) + "%";
+  if (box) box.className = "big-timer" + (left <= 0 ? " over" : left <= 10 ? " hurry" : "");
+  // 소리: 같은 초에 두 번 울리지 않게 문제·초를 기억
+  const tag = L.k + ":" + L.openedAt + ":" + (L.plus || 0);
+  if (!T.beep || T.beep.tag !== tag) T.beep = { tag, done: {} };
+  const ring = (k, fn) => { if (!T.beep.done[k]) { T.beep.done[k] = 1; fn(); } };
+  if (left === 10) ring(10, () => beep(988, 0.25));
+  if (left >= 1 && left <= 3) ring(left, () => beep(660, 0.1));
+  if (left <= 0 && left > -2) ring(0, () => { beep(880, 0.3); beep(880, 0.3, 0.4); beep(1175, 0.6, 0.8); });
+}
+
+/* ───────── 오늘 결석 체크(2026-11-25 수업 뒤) ─────────
+ * 대기실에서 명단 번호를 눌러 결석 표시 → «기숙사 포인트» 탭 결석 칸과 같은 곳(sd2_absent[반:차시])에 저장돼 평균 분모에서 빠진다.
+ * 기숙사 발표에서도 빠진다. 명단은 houseRoster(토큰 필요). */
+function absentKey(L) { return L.gb + ":" + L.sessionId; }
+function absentNums(L) { return ((store.get("sd2_absent") || {})[absentKey(L)] || "").split(/[,\s]+/).filter(Boolean).map(n => String(Number(n))); }
+function setAbsentNums(L, nums) { const all = store.get("sd2_absent") || {}; all[absentKey(L)] = nums.sort((a, b) => a - b).join(","); store.set("sd2_absent", all); }
+async function loadRoster() {
+  if (T.roster && T.roster.length) return T.roster;
+  const j = await tGet({ mode: "houseRoster", token: T.token, grade: "3" });
+  if (j.result !== "success") throw new Error(j.message || "명단을 못 불러왔어");
+  T.roster = j.list; return T.roster;
+}
+function absentBoxHTML(L) {
+  const abs = absentNums(L);
+  const mine = (T.roster || []).filter(r => r.studentId.slice(0, 3) === L.gb).sort((a, b) => a.studentId < b.studentId ? -1 : 1);
+  if (!mine.length) return `<div class="card abs-card"><p class="h2">오늘 결석 체크</p>
+    <p class="hint">${teacherToken() ? "명단을 불러오면 번호를 눌러 결석을 표시할 수 있어." : "토큰을 넣고 시작해야 명단을 불러와. 대신 번호를 직접 써도 돼."}</p>
+    <div class="btn-row">${teacherToken() ? `<button class="btn" type="button" id="absLoad">명단 불러오기</button>` : ""}</div>
+    <label class="field"><span>결석 번호(쉼표로)</span><input id="absTxt" type="text" inputmode="numeric" value="${esc(abs.join(","))}"></label></div>`;
+  return `<div class="card abs-card"><p class="h2">오늘 결석 체크 <small class="hint">— 눌러서 표시 · 결석 ${abs.length}명 · 기숙사 평균에서 빠짐</small></p>
+    <div class="abs-grid">${mine.map(r => { const n = String(Number(r.studentId.slice(3))); return `<button type="button" class="abs-chip ${abs.includes(n) ? "on" : ""}" data-n="${n}" aria-pressed="${abs.includes(n)}">${n} ${esc(r.name)}</button>`; }).join("")}</div></div>`;
+}
+function bindAbsent(L) {
+  const box = $("absBox"); if (!box) return;
+  const redraw = () => { box.innerHTML = absentBoxHTML(L); bindAbsent(L); };
+  const ld = $("absLoad");
+  if (ld) ld.addEventListener("click", async () => { ld.disabled = true; ld.textContent = "불러오는 중…"; try { await loadRoster(); } catch (e) { toast(e.message || "명단을 못 불러왔어"); } redraw(); });
+  const tx = $("absTxt");
+  if (tx) tx.addEventListener("change", () => { setAbsentNums(L, tx.value.split(/[,\s]+/).filter(Boolean).map(n => String(Number(n)))); toast("결석 저장"); });
+  box.querySelectorAll(".abs-chip").forEach(b => b.addEventListener("click", () => {
+    const set = new Set(absentNums(L)), n = b.dataset.n;
+    set.has(n) ? set.delete(n) : set.add(n);
+    setAbsentNums(L, [...set]); redraw();
+  }));
+}
+
+/* ───────── 기숙사 발표(칠판용, 2026-11-25 수업 뒤) ─────────
+ * 배정은 성적 균형이지만, 칠판에는 «뽑기»처럼 보이게: 순서를 섞어 한 명씩 이름이 기숙사 사이를 돌다 멈춘다.
+ * 점수·순위·띠는 하나도 안 나온다. 결석 체크한 학생은 빠진다(다음 시간 태블릿에서 자기 기숙사를 봄). */
+async function openDraw(L) {
+  if (!teacherToken()) { toast("토큰을 넣고 시작해야 명단을 불러와"); return; }
+  try { await loadRoster(); } catch (e) { toast(e.message || "명단을 못 불러왔어"); return; }
+  const abs = absentNums(L);
+  const all = T.roster.filter(r => r.studentId.slice(0, 3) === L.gb);
+  if (!all.length) { toast("이 반 확정 명단이 없어(«기숙사 배정»에서 확정)"); return; }
+  const list = all.filter(r => !abs.includes(String(Number(r.studentId.slice(3)))));
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ov = document.createElement("div");
+  ov.className = "draw-ov"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "기숙사 발표");
+  ov.innerHTML = `<div class="draw-head"><b>${Number(L.gb.slice(1))}반 기숙사 뽑기</b><span class="hint" id="drawCnt">0 / ${list.length}</span>
+      <span class="draw-btns"><button class="btn primary" type="button" id="drawGo">▶ 뽑기 시작</button><button class="btn" type="button" id="drawAll">⏩ 한꺼번에</button><button class="btn ghost" type="button" id="drawX">닫기</button></span></div>
+    <div class="draw-slot" id="drawSlot"><span class="ds-name">?</span><span class="ds-house">🎲</span></div>
+    <div class="draw-cols">${HOUSES.map(h => `<div class="draw-col" style="--hcolor:${h.color}" data-h="${esc(h.name)}"><b>${h.icon} ${esc(h.name)}</b><ul></ul></div>`).join("")}</div>
+    ${abs.length ? `<p class="hint draw-foot">오늘 없는 ${abs.length}명은 다음 시간에 태블릿에서 자기 기숙사를 봐.</p>` : ""}`;
+  document.body.appendChild(ov);
+  let i = 0, run = false, stop = false, timer = null;
+  const slot = ov.querySelector("#drawSlot"), cnt = ov.querySelector("#drawCnt");
+  const place = r => {
+    const col = ov.querySelector(`.draw-col[data-h="${CSS.escape(r.house)}"] ul`);
+    if (col) { const li = document.createElement("li"); li.textContent = r.name; li.className = "pop"; col.appendChild(li); }
+    cnt.textContent = (++i) + " / " + list.length;
+  };
+  const one = () => new Promise(res => {
+    const r = list[i], h = houseByName(r.house);
+    slot.querySelector(".ds-name").textContent = r.name;
+    if (reduce) { slot.querySelector(".ds-house").textContent = (h ? h.icon + " " : "") + r.house; place(r); return res(); }
+    let n = 0, d = 50; const spins = 7 + Math.floor(Math.random() * 4);
+    const spin = () => {
+      if (stop) return res();
+      const hh = n < spins ? HOUSES[n % HOUSES.length] : h;
+      slot.style.setProperty("--hcolor", hh ? hh.color : "#888");
+      slot.querySelector(".ds-house").textContent = hh ? hh.icon + " " + hh.name : r.house;
+      if (n < spins) { beep(500 + (n % 4) * 120, 0.04); n++; d *= 1.13; timer = setTimeout(spin, d); }
+      else { beep(1046, 0.25); slot.classList.add("land"); setTimeout(() => slot.classList.remove("land"), 400); place(r); timer = setTimeout(res, 500); }
+    };
+    spin();
+  });
+  const go = async () => { if (run) return; run = true; ov.querySelector("#drawGo").disabled = true; while (i < list.length && !stop) await one(); run = false; if (i >= list.length) slot.querySelector(".ds-name").textContent = "끝! 🎉"; };
+  ov.querySelector("#drawGo").addEventListener("click", go);
+  ov.querySelector("#drawAll").addEventListener("click", () => { stop = true; clearTimeout(timer); while (i < list.length) place(list[i]); slot.querySelector(".ds-name").textContent = "끝! 🎉"; slot.querySelector(".ds-house").textContent = ""; ov.querySelector("#drawGo").disabled = true; });
+  ov.querySelector("#drawX").addEventListener("click", () => { stop = true; clearTimeout(timer); ov.remove(); });
 }
 function liveBarsHTML(s, steps, layer) {
   const boss = bossState(s, steps, layer), hs = houseLive(steps);
@@ -807,7 +945,7 @@ function confirmReveal(steps) {
 function liveMove(d) {
   const L = T.live, s = sessionById(L.sessionId), steps = stepsOf(s);
   L.k = Math.max(-1, Math.min(steps.length, L.k + d));
-  L.reveal = false; L.dist = false; L.clue = false; L.card = false; L.openedAt = Date.now();
+  L.reveal = false; L.dist = false; L.clue = false; L.card = false; L.plus = 0; L.openedAt = Date.now();
   liveSave(); renderLive(); window.scrollTo(0, 0);
 }
 async function pollOnce(qid) {
@@ -889,20 +1027,27 @@ function layerCardHTML(layerId) {
 /* ───────── 기숙사 배정(houseAssign) ───────── */
 function renderAssign() {
   const v = $("tHouses"), a = T.assign;
-  v.innerHTML = `<div class="card"><h2 class="h2">3학년 기숙사 배정</h2>
-    <p>반마다 학기말 합계로 줄을 세워 4명씩 띠를 짓고, 띠마다 기숙사 4곳에 1명씩 넣은 뒤 같은 띠 안에서 맞바꿔 기숙사 평균을 맞춘다. 학생은 성향 테스트 뒤 이 기숙사를 결과로 본다(테스트 답과 상관없음).</p>
-    <div class="row3">${tokenField()}<label class="field"><span>성적 기준</span><select id="basisIn"><option value="both">학기말 합계(수행 30 + 지필 70)</option><option value="exam">지필만</option></select></label><span></span></div>
+  // 2026-11-25 수업 뒤: 전자칠판에 띄워도 «성적으로 나눴다»가 안 보이게, 배정 방식·성적·상중하는 «교사용» 칸을 열어야 보인다
+  const open = !!T.assignOpen;
+  v.innerHTML = `<div class="card"><h2 class="h2">3학년 기숙사</h2>
+    <p class="hint">칠판에 발표할 때는 <b>«수업 진행» 대기실의 🎲 기숙사 발표</b>를 써(뽑기처럼 한 명씩, 점수 없음).</p>
+    <div class="row3">${tokenField()}<span></span><span></span></div>
     <p id="aErr" class="err" style="color:var(--bad)"></p>
-    <div class="btn-row"><button class="btn primary" type="button" id="aPrev">미리보기</button>${a && a.result === "success" ? `<button class="btn" type="button" id="aConfirm" ${a.confirmed ? "disabled" : ""}>${a.confirmed ? "확정됨 ✓" : "이대로 확정"}</button>` : ""}<button class="btn" type="button" id="aRoster">확정 명단 보기</button></div></div>
-    ${T.rosterView ? rosterHTML(T.rosterView, a) : ""}
-    ${a && a.result === "success" ? assignHTML(a) : ""}`;
+    <div class="btn-row"><button class="btn" type="button" id="aRoster">확정 명단 보기</button><button class="btn ghost" type="button" id="aOpen">${open ? "🔒 교사용 닫기" : "🔒 교사용 열기"}</button></div></div>
+    ${open ? `<div class="card teacher-only"><p class="warn-box">교사 전용 — 칠판에 띄우지 말 것</p>
+    <p>반마다 학기말 합계로 줄을 세워 4명씩 띠를 짓고, 띠마다 기숙사 4곳에 1명씩 넣은 뒤 같은 띠 안에서 맞바꿔 기숙사 평균을 맞춘다. 학생은 성향 테스트 뒤 이 기숙사를 결과로 본다(테스트 답과 상관없음).</p>
+    <div class="row3"><label class="field"><span>성적 기준</span><select id="basisIn"><option value="both">학기말 합계(수행 30 + 지필 70)</option><option value="exam">지필만</option></select></label><span></span><span></span></div>
+    <div class="btn-row"><button class="btn primary" type="button" id="aPrev">미리보기</button>${a && a.result === "success" ? `<button class="btn" type="button" id="aConfirm" ${a.confirmed ? "disabled" : ""}>${a.confirmed ? "확정됨 ✓" : "이대로 확정"}</button>` : ""}</div></div>` : ""}
+    ${T.rosterView ? rosterHTML(T.rosterView, open ? a : null) : ""}
+    ${open && a && a.result === "success" ? assignHTML(a) : ""}`;
+  $("aOpen").addEventListener("click", () => { T.assignOpen = !open; renderAssign(); });
   $("aRoster").addEventListener("click", async () => {
     readToken(); if (!T.token) { $("aErr").textContent = "토큰을 넣어 줘."; return; }
     try { const j = await tGet({ mode: "houseRoster", token: T.token, grade: "3" }); if (j.result !== "success") throw new Error(j.message); T.rosterView = j.list; }
     catch (e) { $("aErr").textContent = e.message || "명단을 불러오지 못했어."; return; }
     renderAssign();
   });
-  $("aPrev").addEventListener("click", async () => {
+  if ($("aPrev")) $("aPrev").addEventListener("click", async () => {
     readToken(); if (!T.token) { $("aErr").textContent = "토큰을 넣어 줘."; return; }
     $("aPrev").disabled = true; $("aPrev").textContent = "계산 중…";
     try { const j = await tPost({ action: "houseAssign", token: T.token, grade: "3", basis: $("basisIn").value }); if (j.result !== "success") throw new Error(j.message); T.assign = j; T.assign.basis = $("basisIn").value; }
@@ -933,7 +1078,7 @@ function rosterHTML(list, a) {
   }
   const byBan = {};
   list.forEach(s => { (byBan[s.studentId.slice(1, 3)] = byBan[s.studentId.slice(1, 3)] || []).push(s); });
-  return `<div class="card"><h2 class="h2">확정 명단 — 기숙사별</h2>${Object.keys(tier).length ? `<p class="hint">이름 옆 상·중·하는 반 안 학기말 합계 순위(세 등분). 학생에게 보이지 말 것.</p>` : `<p class="hint">«미리보기»를 먼저 누르면 이름 옆에 상·중·하 띠가 같이 나와.</p>`}
+  return `<div class="card"><h2 class="h2">확정 명단 — 기숙사별</h2>${Object.keys(tier).length ? `<p class="hint">이름 옆 상·중·하는 반 안 학기말 합계 순위(세 등분). 학생에게 보이지 말 것.</p>` : T.assignOpen ? `<p class="hint">«미리보기»를 먼저 누르면 이름 옆에 상·중·하 띠가 같이 나와.</p>` : ""}
     ${Object.entries(byBan).sort().map(([ban, arr]) => `<h3 class="bank-b">${Number(ban)}반 (${arr.length}명)</h3>
       <div class="roster-grid">${HOUSES.map(h => { const ms = arr.filter(s => s.house === h.name).sort((x, y) => x.studentId < y.studentId ? -1 : 1);
         const cnt = { 상: 0, 중: 0, 하: 0 }; ms.forEach(s => { if (tier[s.studentId]) cnt[tier[s.studentId]]++; });
