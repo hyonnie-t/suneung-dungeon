@@ -512,7 +512,11 @@ function runText(sc, notes) {
   const h = houseByName(S.house);
   const head = ["[수능 던전] " + S.session.title + (h ? " · " + h.name + " 기숙사" : ""),
     "내 점수 " + sc.pts + "점 · 보스 공격 정답 " + sc.attackOk + "/" + sc.attackN + " · 피해 " + sc.dmg + " · 도감 카드 " + S.run.cards.length];
-  return head.concat(notes.length ? ["", "왜 헷갈렸나"].concat(notes.map(n => "- " + n.text)) : []).join("\n");
+  // 2026-11-25: 결과 화면 «한 줄 정리»는 맞힌 문제에도 쓰므로, 틀린 공격 문제 것만 «왜 헷갈렸나», 나머지는 «정리한 한 줄»로 나눈다
+  const wrong = new Set(answersList().filter(a => a.kind === "attack" && a.pick && !a.ok).map(a => a.id));
+  const w = notes.filter(n => wrong.has(n.id)), o = notes.filter(n => !wrong.has(n.id));
+  return head.concat(w.length ? ["", "왜 헷갈렸나"].concat(w.map(n => "- " + n.text)) : [])
+    .concat(o.length ? ["", "정리한 한 줄"].concat(o.map(n => "- " + n.text)) : []).join("\n");
 }
 /* v183 (2026-11-17) 저장 재시도 — history26 snippets/submit_retry.js 원본을 복사(설명은 원본에).
  * 오류 화면·HTTP 오류·네트워크 끊김·30초 초과면 1~3초 쉬고 최대 2번 더(기본 제출만, 같은 clientId로). 정상 JSON 오류는 다시 안 보냄. */

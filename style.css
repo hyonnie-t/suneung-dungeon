@@ -348,3 +348,5 @@ details.card summary{cursor:pointer;font-family:var(--sans)}
 .learn-steps li{line-height:1.6}
 .learn-steps .btn{margin-left:8px;min-height:40px}
 .learn-note{display:block;width:100%;margin-top:8px;font:16px/1.5 var(--sans);padding:8px;border:1.5px solid var(--line);border-radius:8px;resize:vertical}
+
+.t-bar ~ .tab-pane .live-top,#sTeacher .live-top{top:49px} /* 한 줄 머리글(.t-bar 49px)에 맞물림 */
