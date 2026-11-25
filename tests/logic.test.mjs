@@ -11,7 +11,7 @@ const Logic = require("../logic.js");
 const ctx = { window: {} };
 vm.createContext(ctx);
 for (const f of ["data.js", "questions.js", "plan.js"]) vm.runInContext(fs.readFileSync(new URL("../" + f, import.meta.url), "utf8") + "\n;this.__x=1", ctx);
-const G = vm.runInContext("({ SESSIONS, BUNDLES, QUESTIONS, KEYS, HOUSES, TEST, bundlesForSession, prevSessionsOf })", ctx);
+const G = vm.runInContext("({ SESSIONS, BUNDLES, QUESTIONS, KEYS, RKEYS, HOUSES, TEST, bundlesForSession, prevSessionsOf })", ctx);
 
 test("베팅 점수", () => {
   assert.equal(Logic.answerPts({ kind: "attack", pick: 2, conf: "sure", ok: true }), 3);
@@ -76,7 +76,11 @@ test("차시 묶음: 층 하나 차시는 묶음 3개·공격 2, 두 층 차시�
     const st = Logic.steps(G.bundlesForSession(s));
     assert.ok(st.length + 1 <= G.KEYS.length, s.id + " 단계 수가 열쇠 글자보다 많음");
     assert.equal(new Set(st.map(x => x.qid)).size, st.length, s.id + " 같은 문항이 두 번");
+    assert.ok(st.length <= G.RKEYS.length, s.id + " 단계 수가 정답 열쇠보다 많음");
   }
+  // 정답 열쇠와 다음 문제 열쇠가 겹치면 정답 열쇠로 다음 문제가 열린다(2026-11-25)
+  assert.equal(G.RKEYS.filter(k => G.KEYS.includes(k)).length, 0, "정답 열쇠와 문제 열쇠가 겹침");
+  assert.equal(new Set(G.RKEYS).size, G.RKEYS.length, "정답 열쇠 중복");
 });
 
 test("묶음 문항·단서가 은행과 맞음", () => {
